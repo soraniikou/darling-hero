@@ -1,37 +1,28 @@
 // api/judge.js
 // Darling Hero - 感情判定API（Vercel Functions）
-// 入力された日本語テキストから、8つの「相」のどれに最も近いかをClaudeで判定する
 
 export default async function handler(req, res) {
-  // CORS設定（同じVercelドメインからのアクセスは自動で許可される）
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // OPTIONSリクエスト（プリフライト）への応答
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // POSTリクエストのみ受け付ける
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', phase: 'shizu' });
   }
 
   try {
-    const { text } = req.body;
+    const { text } = req.body || {};
 
     if (!text || typeof text !== 'string' || text.length > 200) {
-      return res.status(400).json({ error: 'Invalid text' });
+      return res.status(400).json({ error: 'Invalid text', phase: 'shizu' });
     }
 
-    // 環境変数からAPIキーを取得（Vercel側で設定）
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured' });
+      console.error('ANTHROPIC_API_KEY not set');
+      return res.status(200).json({ phase: 'shizu' });
     }
 
-    // Claudeに判定を依頼するプロンプト
     const systemPrompt = `あなたは日本語の感情を読み取る専門家です。入力されたテキストを以下の8つの「相」のどれに最も近いか判定してください。
 
 【8つの相】
@@ -48,7 +39,6 @@ export default async function handler(req, res) {
 
 {"phase": "ikari" または "ai" または "yorokobi" または "shaa" または "tsukare" または "nozomi" または "ai_love" または "shizu"}`;
 
-    // Anthropic APIへリクエスト
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -68,14 +58,13 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Anthropic API error:', errorText);
-      return res.status(500).json({ error: 'AI judgment failed', phase: 'shizu' });
+      console.error('Anthropic API error:', response.status, errorText);
+      return res.status(200).json({ phase: 'shizu' });
     }
 
     const data = await response.json();
-    const aiText = data.content[0]?.text?.trim() || '{}';
+    const aiText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '{}';
 
-    // JSON抽出（前後に余計な文字があっても対応）
     let phase = 'shizu';
     try {
       const match = aiText.match(/\{[^}]*\}/);
@@ -87,14 +76,13 @@ export default async function handler(req, res) {
         }
       }
     } catch (e) {
-      console.error('Parse error:', e, aiText);
+      console.error('Parse error:', e.message, 'aiText:', aiText);
     }
 
     return res.status(200).json({ phase });
 
   } catch (error) {
-    console.error('Handler error:', error);
-    // エラー時は静の相にフォールバック
+    console.error('Handler error:', error.message);
     return res.status(200).json({ phase: 'shizu' });
   }
 }
