@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darling Hero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Pinyon+Script&family=Great+Vibes&family=Allura&family=Noto+Serif+JP:wght@200;300;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #050508;
+    --text: #e8e8f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Zen Kurenaido', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+    touch-action: manipulation;
+  }
+
+  canvas#bg {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1;
+  }
+
+  canvas#laserCanvas {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    mix-blend-mode: screen;
+  }
+
+  .app {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    pointer-events: none;
+  }
+  .app * { pointer-events: auto; }
+
+  .title-wrap {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  h1 {
+    font-family: 'Pinyon Script', 'Great Vibes', 'Allura', cursive;
+    font-size: clamp(2.8rem, 7.5vw, 4.4rem);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: rgba(255, 220, 130, 0.95);
+    text-shadow: 0 0 24px rgba(255, 216, 107, 0.55), 0 0 50px rgba(255, 143, 163, 0.3);
+    line-height: 1.1;
+  }
+
+  .input-row {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, calc(-50% - 60px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 560px;
+    width: calc(100% - 40px);
+    z-index: 50;
+  }
+
+  .input-with-arrow {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .input-arrow {
+    color: rgba(255, 216, 107, 0.85);
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    text-shadow: 0 0 14px rgba(255, 216, 107, 0.5);
+    line-height: 1;
+  }
+
+  textarea {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255, 216, 107, 0.2);
+    color: var(--text);
+    font-family: 'Zen Kurenaido', sans-serif;
+    font-size: 1rem;
+    padding: 10px 14px;
+    resize: none;
+    height: 52px;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+  }
+  textarea::-webkit-scrollbar { display: none !important; }
+  textarea { -ms-overflow-style: none; scrollbar-width: none; }
+  textarea:focus {
+    border-color: rgba(255, 216, 107, 0.5);
+    box-shadow: 0 0 20px rgba(255, 216, 107, 0.15);
+  }
+  textarea::placeholder { color: rgba(200,200,220,0.55); }
+  textarea:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .release-btn {
+    width: 100px;
+    height: 100px;
+    min-width: 100px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    background: linear-gradient(135deg, #ffd86b 0%, #ff8fa3 50%, #7ee8fa 100%);
+    clip-path: polygon(50% 0%, 100% 100%, 0 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: #1a1a2a;
+    font-family: 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: 1.35rem;
+    font-weight: 400;
+    transition: transform 0.3s, filter 0.3s, opacity 0.3s, background 1s;
+    box-shadow: 0 0 30px rgba(255, 216, 107, 0.3);
+  }
+  .release-btn .btn-mark {
+    font-family: sans-serif;
+    font-size: 1.4em;
+    line-height: 1;
+  }
+  .release-btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.15);
+  }
+  .release-btn:active { transform: scale(0.96); }
+  .release-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .spotlight-glow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 700px;
+    height: 700px;
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99;
+    filter: blur(25px);
+    transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease, background 0.8s ease;
+    opacity: 0;
+  }
+  .spotlight-glow.show {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+
+  .burst-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 150;
+  }
+  .burst-char {
+    position: fixed;
+    font-family: 'Zen Kurenaido', sans-serif;
+    font-size: 2.8rem;
+    font-weight: bold;
+    white-space: nowrap;
+    will-change: transform, opacity;
+  }
+
+  /* 相の名前（漢字一文字、画面隅に表示） */
+  .phase-name {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 200;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 1.4s ease, transform 1.4s ease;
+    transform: translateY(-10px);
+    pointer-events: none;
+    z-index: 200;
+    text-shadow: 0 0 20px currentColor;
+  }
+  .phase-name.show {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 300;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<canvas id="laserCanvas"></canvas>
+<div class="spotlight-glow" id="spotlightGlow"></div>
+<div class="burst-overlay" id="burstOverlay"></div>
+<div class="phase-name" id="phaseName"></div>
+
+<div class="app">
+  <div class="title-wrap">
+    <h1>Darling Hero</h1>
+  </div>
+
+  <div class="input-row" id="inputRow">
+    <div class="input-with-arrow">
+      <textarea id="input" placeholder="write your feeling…" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+      <span class="input-arrow">→</span>
+    </div>
+    <button class="release-btn" id="releaseBtn" onclick="release()">
+      <span class="btn-mark">△</span>
+      <span>release</span>
+    </button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 七変化システム：8つの「相」（AI判定）
+// ============================================================
+const PHASES = {
+  ikari: {
+    name: '怒',
+    laserColors: [
+      { core: '255,80,80', glow: '255,40,40' },
+      { core: '255,40,140', glow: '200,0,80' },
+      { core: '180,40,255', glow: '120,0,200' },
+      { core: '255,200,40', glow: '255,140,0' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(255,80,40,0.7) 0%, rgba(180,40,80,0.4) 30%, rgba(80,0,80,0.15) 60%, transparent 80%)',
+    laserSpeedRange: [0.05, 0.10],
+    laserDuration: 3500,
+    laserCount: 40,
+    burstSpeed: [1.2, 3.0],
+    burstGravity: 0.04,
+    burstUpward: false,
+    glowColor: '#ff5040'
+  },
+  ai: {
+    name: '哀',
+    laserColors: [
+      { core: '120,160,255', glow: '60,80,200' },
+      { core: '180,200,255', glow: '100,140,220' },
+      { core: '80,100,180', glow: '40,60,140' },
+      { core: '200,220,255', glow: '150,180,230' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(100,140,220,0.5) 0%, rgba(60,80,160,0.3) 30%, rgba(20,30,80,0.15) 60%, transparent 80%)',
+    laserSpeedRange: [0.012, 0.025],
+    laserDuration: 6500,
+    laserCount: 28,
+    burstSpeed: [0.3, 0.7],
+    burstGravity: 0.05,
+    burstUpward: false,
+    glowColor: '#6080d0'
+  },
+  yorokobi: {
+    name: '喜',
+    laserColors: [
+      { core: '255,240,150', glow: '255,200,80' },
+      { core: '255,200,230', glow: '255,150,200' },
+      { core: '255,255,200', glow: '255,220,150' },
+      { core: '180,255,200', glow: '120,230,160' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(255,240,150,0.7) 0%, rgba(255,200,180,0.4) 30%, rgba(255,160,180,0.15) 60%, transparent 80%)',
+    laserSpeedRange: [0.03, 0.06],
+    laserDuration: 4200,
+    laserCount: 38,
+    burstSpeed: [0.8, 2.0],
+    burstGravity: -0.02,
+    burstUpward: true,
+    glowColor: '#ffd860'
+  },
+  shaa: {
+    name: '謝',
+    laserColors: [
+      { core: '255,200,230', glow: '255,150,200' },
+      { core: '255,255,255', glow: '255,220,240' },
+      { core: '255,180,200', glow: '230,140,180' },
+      { core: '255,230,250', glow: '255,200,230' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(255,220,240,0.7) 0%, rgba(255,180,210,0.4) 30%, rgba(220,150,200,0.15) 60%, transparent 80%)',
+    laserSpeedRange: [0.018, 0.035],
+    laserDuration: 5000,
+    laserCount: 32,
+    burstSpeed: [0.5, 1.2],
+    burstGravity: 0.005,
+    burstUpward: false,
+    burstCircular: true,
+    glowColor: '#ffb0d0'
+  },
+  tsukare: {
+    name: '疲',
+    laserColors: [
+      { core: '180,180,200', glow: '120,120,160' },
+      { core: '200,180,220', glow: '150,130,180' },
+      { core: '160,160,180', glow: '100,100,140' },
+      { core: '210,200,220', glow: '160,150,180' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(150,150,180,0.4) 0%, rgba(120,110,150,0.25) 30%, rgba(60,50,80,0.1) 60%, transparent 80%)',
+    laserSpeedRange: [0.008, 0.018],
+    laserDuration: 7000,
+    laserCount: 22,
+    burstSpeed: [0.2, 0.5],
+    burstGravity: 0.06,
+    burstUpward: false,
+    glowColor: '#a0a0c0'
+  },
+  nozomi: {
+    name: '望',
+    laserColors: [
+      { core: '150,255,220', glow: '80,220,180' },
+      { core: '200,240,255', glow: '120,200,240' },
+      { core: '180,255,200', glow: '100,220,140' },
+      { core: '220,255,240', glow: '160,240,220' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(150,255,220,0.6) 0%, rgba(100,200,200,0.35) 30%, rgba(40,120,140,0.12) 60%, transparent 80%)',
+    laserSpeedRange: [0.025, 0.045],
+    laserDuration: 5500,
+    laserCount: 34,
+    burstSpeed: [0.6, 1.4],
+    burstGravity: -0.025,
+    burstUpward: true,
+    glowColor: '#80e8c0'
+  },
+  ai_love: {
+    name: '愛',
+    laserColors: [
+      { core: '255,150,180', glow: '220,80,130' },
+      { core: '255,200,210', glow: '255,160,180' },
+      { core: '255,230,200', glow: '240,180,160' },
+      { core: '255,255,240', glow: '255,220,200' },
+      { core: '220,100,140', glow: '180,60,100' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(255,180,200,0.7) 0%, rgba(220,120,160,0.4) 30%, rgba(160,60,100,0.15) 60%, transparent 80%)',
+    laserSpeedRange: [0.015, 0.030],
+    laserDuration: 5800,
+    laserCount: 30,
+    burstSpeed: [0.4, 1.0],
+    burstGravity: 0.005,
+    burstUpward: false,
+    burstCircular: true,
+    glowColor: '#ff90b0'
+  },
+  shizu: {
+    name: '静',
+    laserColors: [
+      { core: '255,255,255', glow: '255,245,200' },
+      { core: '255,245,200', glow: '255,216,107' },
+      { core: '255,216,107', glow: '255,180,80' },
+      { core: '200,240,255', glow: '126,232,250' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(255,245,200,0.6) 0%, rgba(255,216,107,0.3) 25%, rgba(255,143,163,0.12) 55%, transparent 80%)',
+    laserSpeedRange: [0.02, 0.05],
+    laserDuration: 4800,
+    laserCount: 32,
+    burstSpeed: [0.6, 1.8],
+    burstGravity: 0.015,
+    burstUpward: false,
+    glowColor: '#ffd86b'
+  }
+};
+
+// ============================================================
+// AI判定システム（裏で先に判定しておく）
+// ============================================================
+let cachedJudgment = null; // 直近の判定結果をキャッシュ
+let cachedText = '';        // どのテキストに対する判定かを記録
+let judgmentInProgress = false;
+
+async function judgeEmotion(text) {
+  try {
+    const response = await fetch('/api/judge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!response.ok) return 'shizu';
+    const data = await response.json();
+    return data.phase || 'shizu';
+  } catch (e) {
+    console.error('Judgment error:', e);
+    return 'shizu';
+  }
+}
+
+// 入力中に裏で判定するためのデバウンス処理
+let judgmentTimer = null;
+function scheduleJudgment(text) {
+  if (judgmentTimer) clearTimeout(judgmentTimer);
+  if (!text || text.trim().length < 2) {
+    cachedJudgment = null;
+    cachedText = '';
+    return;
+  }
+  // 入力が止まって800ms経ったら判定開始
+  judgmentTimer = setTimeout(async () => {
+    if (judgmentInProgress) return;
+    judgmentInProgress = true;
+    const result = await judgeEmotion(text);
+    cachedJudgment = result;
+    cachedText = text;
+    judgmentInProgress = false;
+  }, 800);
+}
+
+// 旧 detectPhase を「キャッシュ取得 + 必要なら即時判定」に置換
+async function getPhaseForText(text) {
+  // 入力が止まって既に判定済みならキャッシュを使う
+  if (cachedText === text && cachedJudgment) {
+    return PHASES[cachedJudgment] || PHASES.shizu;
+  }
+  // 判定中の場合は完了を待つ（最大2秒）
+  if (judgmentInProgress) {
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 100));
+      if (!judgmentInProgress) break;
+    }
+    if (cachedText === text && cachedJudgment) {
+      return PHASES[cachedJudgment] || PHASES.shizu;
+    }
+  }
+  // キャッシュがなければ即時判定
+  const phaseKey = await judgeEmotion(text);
+  return PHASES[phaseKey] || PHASES.shizu;
+}
+
+// ============================================================
+// 背景キャンバス
+// ============================================================
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const TRI_COLORS = ['#7c2d12', '#831843', '#3d2817', '#1e1b4b'];
+const triMarks = [];
+for (let i = 0; i < 17; i++) {
+  triMarks.push({
+    x: Math.random() * 2000 - 200,
+    y: Math.random() * 1400 - 200,
+    size: 15 + Math.random() * 80,
+    rot: Math.random() * Math.PI * 2,
+    vr: (Math.random() - 0.5) * 0.008,
+    vx: (Math.random() - 0.5) * 0.15,
+    vy: (Math.random() - 0.5) * 0.12,
+    color: TRI_COLORS[Math.floor(Math.random() * TRI_COLORS.length)],
+    alpha: 0.12 + Math.random() * 0.18
+  });
+}
+
+const particles = [];
+for (let i = 0; i < 180; i++) {
+  particles.push({
+    x: Math.random() * 1400,
+    y: Math.random() * 900,
+    r: Math.random() * 1.5,
+    alpha: Math.random() * 0.6,
+    twinkle: Math.random() * Math.PI * 2
+  });
+}
+
+let heroSparkles = [];
+let burstCharSpans = [];
+let heroBrightness = 0;
+
+function drawTriangle(cx, cy, size, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 3; i++) {
+    const a = rot + (i / 3) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + Math.cos(a) * size;
+    const y = cy + Math.sin(a) * size;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+  ctx.fillStyle = 'rgba(5,5,8,0.18)';
+  ctx.fillRect(0, 0, W, H);
+
+  const brightnessBoost = Math.min(0.4, heroBrightness);
+  particles.forEach(p => {
+    p.twinkle += 0.02;
+    const baseA = p.alpha * (0.5 + 0.5 * Math.sin(p.twinkle));
+    const a = Math.min(1, baseA + brightnessBoost);
+    ctx.beginPath();
+    ctx.arc(p.x % W, p.y % H, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fill();
+  });
+
+  triMarks.forEach(tr => {
+    tr.x += tr.vx; tr.y += tr.vy; tr.rot += tr.vr;
+    if (tr.x < -300) tr.x = W + 200;
+    if (tr.x > W + 300) tr.x = -200;
+    if (tr.y < -300) tr.y = H + 200;
+    if (tr.y > H + 300) tr.y = -200;
+    const sx = tr.x, sy = tr.y, s = tr.size;
+    const shadowOff = s * 0.08;
+    ctx.save();
+    ctx.globalAlpha = tr.alpha;
+    drawTriangle(sx + shadowOff, sy + shadowOff, s, tr.rot);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    drawTriangle(sx, sy, s, tr.rot);
+    const g = ctx.createLinearGradient(sx - s, sy - s, sx + s, sy + s);
+    g.addColorStop(0, tr.color);
+    g.addColorStop(0.4, tr.color);
+    g.addColorStop(0.7, 'rgba(255, 216, 107, 0.2)');
+    g.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  });
+
+  heroSparkles = heroSparkles.filter(s => s.life > 0);
+  heroSparkles.forEach(s => {
+    s.x += s.vx; s.y += s.vy;
+    s.vy += s.gravity;
+    s.vx *= 0.99;
+    s.life -= 1;
+    s.rot += s.vRot;
+    const a = Math.min(1, s.life / 400);
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(s.rot);
+    ctx.beginPath();
+    ctx.arc(0, 0, s.size, 0, Math.PI * 2);
+    ctx.fillStyle = s.color.replace(/[\d.]+\)$/, `${a})`);
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 28;
+    ctx.fill();
+    ctx.restore();
+  });
+
+  burstCharSpans = burstCharSpans.filter(b => {
+    if (b.life <= 0) {
+      if (b.el && b.el.parentNode) b.el.remove();
+      return false;
+    }
+    return true;
+  });
+  burstCharSpans.forEach(b => {
+    if (b.circular) {
+      // 円を描く動き（謝の相）
+      b.angle += b.angleSpeed;
+      b.radius += b.radiusSpeed;
+      b.x = b.cx + Math.cos(b.angle) * b.radius;
+      b.y = b.cy + Math.sin(b.angle) * b.radius;
+    } else if (b.phase === 'up') {
+      b.vy -= b.upForce;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vx *= 0.99;
+    } else {
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += b.gravity;
+      if (b.upwardEnabled && b.life < b.maxLife - 60) {
+        b.phase = 'up';
+        b.vy = -0.5 - Math.random() * 0.5;
+      }
+    }
+    b.rot += b.vRot;
+    b.life -= 1;
+    const a = Math.min(1, b.life / 400);
+    if (b.el && b.el.parentNode) {
+      b.el.style.left = b.x + 'px';
+      b.el.style.top = b.y + 'px';
+      b.el.style.transform = `translate(-50%, -50%) rotate(${b.rot}deg) scale(${0.7 + a * 0.3})`;
+      b.el.style.opacity = a;
+    }
+  });
+
+  heroBrightness *= 0.995;
+}
+loop();
+
+// ============================================================
+// レーザーシステム（相に応じて色・速度を切替）
+// ============================================================
+const laserCanvas = document.getElementById('laserCanvas');
+const laserCtx = laserCanvas.getContext('2d');
+
+function resizeLaser() {
+  laserCanvas.width = window.innerWidth;
+  laserCanvas.height = window.innerHeight;
+}
+resizeLaser();
+window.addEventListener('resize', resizeLaser);
+
+let lasers = [];
+
+function spawnLaser(phase) {
+  const cx = laserCanvas.width / 2;
+  const cy = laserCanvas.height / 2;
+  const angle = Math.random() * Math.PI * 2;
+  const distance = Math.max(laserCanvas.width, laserCanvas.height) * 0.7;
+  const startX = cx + Math.cos(angle) * distance;
+  const startY = cy + Math.sin(angle) * distance;
+  const targetX = cx + (Math.random() - 0.5) * 200;
+  const targetY = cy + (Math.random() - 0.5) * 100;
+  const colorIdx = Math.floor(Math.random() * phase.laserColors.length);
+  const color = phase.laserColors[colorIdx];
+  const [minSpeed, maxSpeed] = phase.laserSpeedRange;
+
+  lasers.push({
+    sx: startX, sy: startY,
+    tx: targetX, ty: targetY,
+    progress: 0,
+    speed: minSpeed + Math.random() * (maxSpeed - minSpeed),
+    thickness: 0.8 + Math.random() * 1.5,
+    life: 80,
+    maxLife: 80,
+    color: color,
+    fadeStart: false
+  });
+}
+
+let laserBurstActive = false;
+function startLaserBurst(phase) {
+  if (laserBurstActive) return;
+  laserBurstActive = true;
+  const interval = phase.laserDuration / phase.laserCount;
+  let count = 0;
+  const fire = () => {
+    if (count >= phase.laserCount) {
+      laserBurstActive = false;
+      return;
+    }
+    const burstSize = 1 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < burstSize; i++) spawnLaser(phase);
+    count += burstSize;
+    const nextDelay = interval * (0.5 + Math.random() * 1.2);
+    setTimeout(fire, nextDelay);
+  };
+  fire();
+}
+
+function drawLasers() {
+  laserCtx.clearRect(0, 0, laserCanvas.width, laserCanvas.height);
+  lasers = lasers.filter(l => l.life > 0);
+
+  lasers.forEach(l => {
+    if (l.progress < 1) {
+      l.progress += l.speed;
+      if (l.progress >= 1) {
+        l.progress = 1;
+        l.fadeStart = true;
+      }
+    } else {
+      l.life -= 4;
+    }
+
+    const headX = l.sx + (l.tx - l.sx) * l.progress;
+    const headY = l.sy + (l.ty - l.sy) * l.progress;
+    const tailLength = 0.35;
+    const tailProgress = Math.max(0, l.progress - tailLength);
+    const tailX = l.sx + (l.tx - l.sx) * tailProgress;
+    const tailY = l.sy + (l.ty - l.sy) * tailProgress;
+    const lifeAlpha = l.fadeStart ? l.life / l.maxLife : 1;
+
+    const grad = laserCtx.createLinearGradient(tailX, tailY, headX, headY);
+    grad.addColorStop(0, `rgba(${l.color.glow},0)`);
+    grad.addColorStop(0.6, `rgba(${l.color.glow},${0.3 * lifeAlpha})`);
+    grad.addColorStop(1, `rgba(${l.color.core},${0.95 * lifeAlpha})`);
+
+    laserCtx.save();
+    laserCtx.shadowColor = `rgba(${l.color.glow},${0.8 * lifeAlpha})`;
+    laserCtx.shadowBlur = 18;
+    laserCtx.strokeStyle = grad;
+    laserCtx.lineWidth = l.thickness * 2.2;
+    laserCtx.lineCap = 'round';
+    laserCtx.beginPath();
+    laserCtx.moveTo(tailX, tailY);
+    laserCtx.lineTo(headX, headY);
+    laserCtx.stroke();
+    laserCtx.restore();
+
+    laserCtx.save();
+    laserCtx.strokeStyle = `rgba(255,255,255,${0.95 * lifeAlpha})`;
+    laserCtx.lineWidth = l.thickness * 0.7;
+    laserCtx.lineCap = 'round';
+    laserCtx.beginPath();
+    laserCtx.moveTo(tailX, tailY);
+    laserCtx.lineTo(headX, headY);
+    laserCtx.stroke();
+    laserCtx.restore();
+
+    if (l.progress >= 1 && l.life > l.maxLife - 20) {
+      const flashAlpha = (l.life - (l.maxLife - 20)) / 20;
+      laserCtx.save();
+      const flashGrad = laserCtx.createRadialGradient(headX, headY, 0, headX, headY, 25);
+      flashGrad.addColorStop(0, `rgba(255,255,255,${0.9 * flashAlpha})`);
+      flashGrad.addColorStop(0.4, `rgba(${l.color.glow},${0.5 * flashAlpha})`);
+      flashGrad.addColorStop(1, `rgba(${l.color.glow},0)`);
+      laserCtx.fillStyle = flashGrad;
+      laserCtx.beginPath();
+      laserCtx.arc(headX, headY, 25, 0, Math.PI * 2);
+      laserCtx.fill();
+      laserCtx.restore();
+    }
+  });
+
+  requestAnimationFrame(drawLasers);
+}
+drawLasers();
+
+// ============================================================
+// 文字飛散（相に応じて動きが変わる）
+// ============================================================
+function spawnHeroBurst(text, phase) {
+  const overlay = document.getElementById('burstOverlay');
+  overlay.innerHTML = '';
+  const screenCx = window.innerWidth / 2;
+  const screenCy = window.innerHeight / 2;
+  const chars = Array.from(text);
+  const [minSpeed, maxSpeed] = phase.burstSpeed;
+
+  chars.forEach((char, idx) => {
+    if (char.trim() === '') return;
+    const span = document.createElement('span');
+    span.className = 'burst-char';
+    span.textContent = char;
+    span.style.left = screenCx + 'px';
+    span.style.top = screenCy + 'px';
+    span.style.transform = 'translate(-50%, -50%)';
+    const colorIdx = idx % phase.laserColors.length;
+    const c = phase.laserColors[colorIdx];
+    const colorStr = `rgb(${c.core})`;
+    span.style.color = colorStr;
+    span.style.textShadow = `0 0 20px ${colorStr}, 0 0 40px ${colorStr}`;
+    overlay.appendChild(span);
+
+    const angle = Math.random() * Math.PI * 2;
+    const speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
+    const maxLife = 1100 + Math.random() * 300;
+
+    const charObj = {
+      el: span,
+      x: screenCx, y: screenCy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 0.2,
+      rot: (Math.random() - 0.5) * 60,
+      vRot: (Math.random() - 0.5) * 3,
+      life: maxLife,
+      maxLife: maxLife,
+      gravity: phase.burstGravity,
+      phase: 'spread',
+      upwardEnabled: phase.burstUpward,
+      upForce: 0.015
+    };
+
+    // 謝の相：円を描く動き
+    if (phase.burstCircular) {
+      charObj.circular = true;
+      charObj.cx = screenCx;
+      charObj.cy = screenCy;
+      charObj.angle = (idx / chars.length) * Math.PI * 2;
+      charObj.angleSpeed = 0.015 + Math.random() * 0.01;
+      charObj.radius = 20;
+      charObj.radiusSpeed = 1.2 + Math.random() * 0.5;
+    }
+
+    burstCharSpans.push(charObj);
+  });
+}
+
+function spawnHeroSparkles(cx, cy, count, phase) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 5;
+    const colorIdx = Math.floor(Math.random() * phase.laserColors.length);
+    const c = phase.laserColors[colorIdx];
+    heroSparkles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (phase.burstUpward ? 1.5 : 0.5),
+      size: 1.5 + Math.random() * 3,
+      life: 300 + Math.random() * 200,
+      color: `rgba(${c.core}, 1)`,
+      rot: 0,
+      vRot: (Math.random() - 0.5) * 0.2,
+      gravity: phase.burstUpward ? -0.01 : 0.02
+    });
+  }
+}
+
+// ============================================================
+// RELEASE
+// ============================================================
+async function release() {
+  const inputEl = document.getElementById('input');
+  const releaseBtn = document.getElementById('releaseBtn');
+  const text = inputEl.value.trim();
+  if (!text) {
+    inputEl.focus();
+    return;
+  }
+
+  // 入力ロック（即座に）
+  inputEl.disabled = true;
+  inputEl.placeholder = '';
+  releaseBtn.disabled = true;
+  inputEl.blur();
+
+  // 相を取得（キャッシュがあれば即時、なければAPIを待つ）
+  const phase = await getPhaseForText(text);
+
+  // 入力欄をクリア（判定後）
+  inputEl.value = '';
+
+  // 中央グローを相の色に
+  const spotlightGlow = document.getElementById('spotlightGlow');
+  spotlightGlow.style.background = phase.glowGradient;
+  spotlightGlow.classList.add('show');
+
+  // 相の名前を表示
+  const phaseNameEl = document.getElementById('phaseName');
+  phaseNameEl.textContent = phase.name;
+  phaseNameEl.style.color = phase.glowColor;
+  setTimeout(() => phaseNameEl.classList.add('show'), 200);
+
+  // レーザー発射
+  startLaserBurst(phase);
+
+  // 文字飛散
+  setTimeout(() => {
+    spawnHeroBurst(text, phase);
+    spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    heroBrightness = 0.5;
+  }, Math.min(2200, phase.laserDuration * 0.45));
+
+  // フェードアウト
+  const totalDuration = phase.laserDuration + 3500;
+  setTimeout(() => {
+    spotlightGlow.classList.remove('show');
+    phaseNameEl.classList.remove('show');
+  }, totalDuration);
+
+  // 入力欄を再開放
+  setTimeout(() => {
+    inputEl.disabled = false;
+    inputEl.placeholder = 'write your feeling…';
+    releaseBtn.disabled = false;
+    // キャッシュをクリア（次の入力に備える）
+    cachedJudgment = null;
+    cachedText = '';
+  }, totalDuration + 100);
+}
+
+// 入力中に裏で判定をスケジュール
+const inputElement = document.getElementById('input');
+inputElement.addEventListener('input', (e) => {
+  scheduleJudgment(e.target.value.trim());
+});
+
+inputElement.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    release();
+  }
+});
+</script>
+</body>
+</html>
