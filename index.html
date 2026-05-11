@@ -7,7 +7,27 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Pinyon+Script&family=Great+Vibes&family=Allura&family=Noto+Serif+JP:wght@200;300;500&display=swap" rel="stylesheet">
-<style>
+/* 最後の一行：Hero Line */
+  .hero-line {
+    position: fixed;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+    color: rgba(255, 245, 220, 0);
+    text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 250;
+    transition: color 2s ease, transform 2s ease;
+    text-align: center;
+  }
+  .hero-line.show {
+    color: rgba(255, 245, 220, 0.95);
+  }
+  <style>
   :root {
     --black: #050508;
     --text: #e8e8f0;
@@ -242,7 +262,7 @@
 <div class="spotlight-glow" id="spotlightGlow"></div>
 <div class="burst-overlay" id="burstOverlay"></div>
 <div class="phase-name" id="phaseName"></div>
-
+<div class="hero-line" id="heroLine"></div>
 <div class="app">
   <div class="title-wrap">
     <h1>Darling Hero</h1>
@@ -886,12 +906,18 @@ async function release() {
   }, Math.min(2200, phase.laserDuration * 0.45));
 
   // フェードアウト
+  // 最後の一行を表示（爆発が落ち着いた頃）
+  const heroLineEl = document.getElementById('heroLine');
+  heroLineEl.textContent = 'Darling, you are the hero of this moment.';
+  setTimeout(() => heroLineEl.classList.add('show'), phase.laserDuration * 0.7);
+
+  // フェードアウト
   const totalDuration = phase.laserDuration + 3500;
   setTimeout(() => {
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
+    heroLineEl.classList.remove('show');
   }, totalDuration);
-
   // 入力欄を再開放
   setTimeout(() => {
     inputEl.disabled = false;
