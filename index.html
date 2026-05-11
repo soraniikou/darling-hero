@@ -7,27 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Pinyon+Script&family=Great+Vibes&family=Allura&family=Noto+Serif+JP:wght@200;300;500&display=swap" rel="stylesheet">
-</style>/* 最後の一行：Hero Line */
-  .hero-line {
-    position: fixed;
-    bottom: 110px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'Pinyon Script', 'Great Vibes', cursive;
-    font-size: clamp(1.4rem, 3.5vw, 2.2rem);
-    color: rgba(255, 245, 220, 0);
-    text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 250;
-    transition: color 2s ease, transform 2s ease;
-    text-align: center;
-  }
-  .hero-line.show {
-    color: rgba(255, 245, 220, 0.95);
-  }
-  <style>
+<style>
   :root {
     --black: #050508;
     --text: #e8e8f0;
@@ -164,7 +144,7 @@
     font-family: 'Pinyon Script', 'Great Vibes', cursive;
     font-size: 1.35rem;
     font-weight: 400;
-    transition: transform 0.3s, filter 0.3s, opacity 0.3s, background 1s;
+    transition: transform 0.3s, filter 0.3s, opacity 0.3s;
     box-shadow: 0 0 30px rgba(255, 216, 107, 0.3);
   }
   .release-btn .btn-mark {
@@ -217,26 +197,48 @@
     will-change: transform, opacity;
   }
 
-  /* 相の名前（漢字一文字、画面隅に表示） */
+  /* 相の名前（英語、画面右上） */
   .phase-name {
     position: fixed;
     top: 24px;
     right: 28px;
-    font-family: 'Noto Serif JP', serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 200;
-    color: rgba(255, 255, 255, 0.7);
-    letter-spacing: 0.1em;
+    font-family: 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.04em;
     opacity: 0;
     transition: opacity 1.4s ease, transform 1.4s ease;
     transform: translateY(-10px);
     pointer-events: none;
     z-index: 200;
-    text-shadow: 0 0 20px currentColor;
+    text-shadow: 0 0 22px currentColor;
   }
   .phase-name.show {
-    opacity: 0.85;
+    opacity: 0.92;
     transform: translateY(0);
+  }
+
+  /* 最後の一行：Hero Line */
+  .hero-line {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    font-family: 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+    color: rgba(255, 245, 220, 0);
+    text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 250;
+    transition: color 2s ease, transform 2s ease;
+    text-align: center;
+  }
+  .hero-line.show {
+    color: rgba(255, 245, 220, 0.95);
+    transform: translateX(-50%) translateY(0);
   }
 
   body::after {
@@ -263,6 +265,7 @@
 <div class="burst-overlay" id="burstOverlay"></div>
 <div class="phase-name" id="phaseName"></div>
 <div class="hero-line" id="heroLine"></div>
+
 <div class="app">
   <div class="title-wrap">
     <h1>Darling Hero</h1>
@@ -282,7 +285,7 @@
 
 <script>
 // ============================================================
-// 七変化システム：8つの「相」（AI判定）
+// 八変化システム：8つの「相」（英語表示・AI判定）
 // ============================================================
 const PHASES = {
   ikari: {
@@ -427,10 +430,10 @@ const PHASES = {
 };
 
 // ============================================================
-// AI判定システム（裏で先に判定しておく）
+// AI判定システム
 // ============================================================
-let cachedJudgment = null; // 直近の判定結果をキャッシュ
-let cachedText = '';        // どのテキストに対する判定かを記録
+let cachedJudgment = null;
+let cachedText = '';
 let judgmentInProgress = false;
 
 async function judgeEmotion(text) {
@@ -449,7 +452,6 @@ async function judgeEmotion(text) {
   }
 }
 
-// 入力中に裏で判定するためのデバウンス処理
 let judgmentTimer = null;
 function scheduleJudgment(text) {
   if (judgmentTimer) clearTimeout(judgmentTimer);
@@ -458,7 +460,6 @@ function scheduleJudgment(text) {
     cachedText = '';
     return;
   }
-  // 入力が止まって800ms経ったら判定開始
   judgmentTimer = setTimeout(async () => {
     if (judgmentInProgress) return;
     judgmentInProgress = true;
@@ -469,13 +470,10 @@ function scheduleJudgment(text) {
   }, 800);
 }
 
-// 旧 detectPhase を「キャッシュ取得 + 必要なら即時判定」に置換
 async function getPhaseForText(text) {
-  // 入力が止まって既に判定済みならキャッシュを使う
   if (cachedText === text && cachedJudgment) {
     return PHASES[cachedJudgment] || PHASES.shizu;
   }
-  // 判定中の場合は完了を待つ（最大2秒）
   if (judgmentInProgress) {
     for (let i = 0; i < 20; i++) {
       await new Promise(r => setTimeout(r, 100));
@@ -485,7 +483,6 @@ async function getPhaseForText(text) {
       return PHASES[cachedJudgment] || PHASES.shizu;
     }
   }
-  // キャッシュがなければ即時判定
   const phaseKey = await judgeEmotion(text);
   return PHASES[phaseKey] || PHASES.shizu;
 }
@@ -616,7 +613,6 @@ function loop() {
   });
   burstCharSpans.forEach(b => {
     if (b.circular) {
-      // 円を描く動き（謝の相）
       b.angle += b.angleSpeed;
       b.radius += b.radiusSpeed;
       b.x = b.cx + Math.cos(b.angle) * b.radius;
@@ -651,7 +647,7 @@ function loop() {
 loop();
 
 // ============================================================
-// レーザーシステム（相に応じて色・速度を切替）
+// レーザーシステム
 // ============================================================
 const laserCanvas = document.getElementById('laserCanvas');
 const laserCtx = laserCanvas.getContext('2d');
@@ -781,7 +777,7 @@ function drawLasers() {
 drawLasers();
 
 // ============================================================
-// 文字飛散（相に応じて動きが変わる）
+// 文字飛散
 // ============================================================
 function spawnHeroBurst(text, phase) {
   const overlay = document.getElementById('burstOverlay');
@@ -825,7 +821,6 @@ function spawnHeroBurst(text, phase) {
       upForce: 0.015
     };
 
-    // 謝の相：円を描く動き
     if (phase.burstCircular) {
       charObj.circular = true;
       charObj.cx = screenCx;
@@ -872,19 +867,23 @@ async function release() {
     return;
   }
 
-  // 入力ロック（即座に）
+  const rect = inputEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  // 入力ロック
   inputEl.disabled = true;
   inputEl.placeholder = '';
   releaseBtn.disabled = true;
   inputEl.blur();
 
-  // 相を取得（キャッシュがあれば即時、なければAPIを待つ）
+  // 相を取得
   const phase = await getPhaseForText(text);
 
-  // 入力欄をクリア（判定後）
+  // 入力欄クリア
   inputEl.value = '';
 
-  // 中央グローを相の色に
+  // 中央グロー
   const spotlightGlow = document.getElementById('spotlightGlow');
   spotlightGlow.style.background = phase.glowGradient;
   spotlightGlow.classList.add('show');
@@ -905,28 +904,27 @@ async function release() {
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
 
-  // フェードアウト
-  // 最後の一行を表示（爆発が落ち着いた頃）
+  // 最後の一行を表示（演出が落ち着いた頃）
   const heroLineEl = document.getElementById('heroLine');
-  heroLineEl.textContent = 'Darling, you are the hero of this moment.';
-  setTimeout(() => heroLineEl.classList.add('show'), phase.laserDuration * 0.7);
+  heroLineEl.textContent = 'Darling 🩷 no one else can imitate';
+  setTimeout(() => heroLineEl.classList.add('show'), phase.laserDuration + 800);
 
   // フェードアウト
-  const totalDuration = phase.laserDuration + 3500;
+  const totalDuration = phase.laserDuration + 4500;
   setTimeout(() => {
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
     heroLineEl.classList.remove('show');
   }, totalDuration);
+
   // 入力欄を再開放
   setTimeout(() => {
     inputEl.disabled = false;
     inputEl.placeholder = 'write your feeling…';
     releaseBtn.disabled = false;
-    // キャッシュをクリア（次の入力に備える）
     cachedJudgment = null;
     cachedText = '';
-  }, totalDuration + 100);
+  }, totalDuration + 1000);
 }
 
 // 入力中に裏で判定をスケジュール
