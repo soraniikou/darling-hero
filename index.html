@@ -351,7 +351,8 @@
     white-space: nowrap;
     pointer-events: none;
     z-index: 250;
-    transition: transform 2s ease;
+    opacity: 0;
+    transition: transform 2s ease, opacity 2s ease;
     text-align: center;
   }
   .hero-line.hero-line--stacked {
@@ -370,6 +371,7 @@
     max-width: min(96vw, 100%);
   }
   .hero-line.show {
+    opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
   .hero-line .hero-line-word {
@@ -650,10 +652,14 @@ const FAREWELL_MESSAGE = 'See you again';
 const FAREWELL_WORD_STAGGER_MS = 300;
 const FAREWELL_WORD_FADE_MS = 280;
 const FAREWELL_HOLD_MS = 4000;
-const FAREWELL_FADE_OUT_MS = 2000;
+/** See you again のフェイドアウト時間（従来 2000ms より +4s） */
+const FAREWELL_FADE_OUT_MS = 6000;
 
 const POST_FAREWELL_SILENCE_MS = 5000;
 const INPUT_UI_FADE_IN_MS = 3000;
+
+/** 名前付きヒーロー行のフェードアウト＋下がり（CSS transition と同期） */
+const HERO_LINE_EXIT_DURATION_MS = 6000;
 
 function getFarewellSequenceMs() {
   const words = FAREWELL_MESSAGE.trim().split(/\s+/).filter(Boolean);
@@ -667,6 +673,14 @@ function getFarewellSequenceMs() {
 const HERO_LINE_WORD_STAGGER_MS = 260;
 
 let heroLineTimeouts = [];
+let heroLineExitClearTimeout = null;
+
+function clearHeroLineExitTimeout() {
+  if (heroLineExitClearTimeout != null) {
+    clearTimeout(heroLineExitClearTimeout);
+    heroLineExitClearTimeout = null;
+  }
+}
 
 function clearHeroLineTimers() {
   heroLineTimeouts.forEach(clearTimeout);
@@ -688,6 +702,7 @@ function appendHeroLineWordChunks(parent, text, wordSpans) {
 function startHeroLineWordReveal(el, fullText) {
   clearHeroLineTimers();
   el.innerHTML = '';
+  el.style.transition = '';
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
   const commaIdx = fullText.indexOf(', ');
   const wordSpans = [];
@@ -755,7 +770,8 @@ function scheduleHeroFarewell(heroFarewellEl) {
   const fadeOutStart = revealMs + FAREWELL_HOLD_MS;
 
   const tFade = setTimeout(() => {
-    heroFarewellEl.style.transition = 'opacity 2s ease';
+    const fadeSec = FAREWELL_FADE_OUT_MS / 1000;
+    heroFarewellEl.style.transition = `opacity ${fadeSec}s ease`;
     heroFarewellEl.style.opacity = '0';
   }, fadeOutStart);
   farewellTimeouts.push(tFade);
@@ -1263,6 +1279,7 @@ async function release() {
 
   clearFarewellTimers();
   clearHeroLineTimers();
+  clearHeroLineExitTimeout();
   const heroFarewellEl = document.getElementById('heroFarewell');
   const heroLineEl = document.getElementById('heroLine');
   heroFarewellEl.innerHTML = '';
@@ -1270,6 +1287,7 @@ async function release() {
   heroFarewellEl.style.transition = 'none';
   heroFarewellEl.style.color = 'transparent';
   heroLineEl.classList.remove('show');
+  heroLineEl.style.transition = '';
   heroLineEl.innerHTML = '';
 
   const inputRowEl = document.getElementById('inputRow');
@@ -1329,10 +1347,20 @@ async function release() {
   setTimeout(() => {
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
-    heroLineEl.classList.remove('show');
-    clearFarewellTimers();
     clearHeroLineTimers();
-    heroLineEl.innerHTML = '';
+    const exitSec = HERO_LINE_EXIT_DURATION_MS / 1000;
+    heroLineEl.style.transition = `transform ${exitSec}s ease, opacity ${exitSec}s ease`;
+    heroLineEl.classList.remove('show');
+
+    clearHeroLineExitTimeout();
+    heroLineExitClearTimeout = setTimeout(() => {
+      heroLineExitClearTimeout = null;
+      heroLineEl.innerHTML = '';
+      heroLineEl.style.transition = '';
+      heroLineEl.classList.remove('hero-line--stacked');
+    }, HERO_LINE_EXIT_DURATION_MS);
+
+    clearFarewellTimers();
     heroFarewellEl.innerHTML = '';
     heroFarewellEl.style.transition = 'opacity 0.6s ease';
     heroFarewellEl.style.opacity = '0';
@@ -1341,7 +1369,8 @@ async function release() {
     document.getElementById('inputRow').classList.add('input-row--hidden');
   }, totalDuration);
 
-  const silenceEndAt = totalDuration + POST_FAREWELL_SILENCE_MS;
+  const silenceEndAt =
+    totalDuration + HERO_LINE_EXIT_DURATION_MS + POST_FAREWELL_SILENCE_MS;
   setTimeout(() => {
     document.getElementById('inputRow').classList.remove('input-row--hidden');
   }, silenceEndAt);
