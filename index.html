@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,8 +44,103 @@
     z-index: 10;
     min-height: 100vh;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.2s ease;
   }
-  .app * { pointer-events: auto; }
+  .app.app-visible {
+    opacity: 1;
+  }
+  .app:not(.app-visible) * {
+    pointer-events: none !important;
+  }
+  .app.app-visible * { pointer-events: auto; }
+
+  .welcome-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--black);
+    transition: opacity 1.2s ease, visibility 1.2s ease;
+  }
+  .welcome-screen.hide {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .welcome-inner {
+    text-align: center;
+    max-width: 560px;
+    width: calc(100% - 40px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .welcome-title {
+    font-family: 'Pinyon Script', 'Great Vibes', 'Allura', cursive;
+    font-size: clamp(2.8rem, 7.5vw, 4.4rem);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: rgba(255, 220, 130, 0.95);
+    text-shadow: 0 0 24px rgba(255, 216, 107, 0.55), 0 0 50px rgba(255, 143, 163, 0.3);
+    line-height: 1.1;
+  }
+  .welcome-prompt {
+    font-family: 'Zen Kurenaido', sans-serif;
+    font-size: 1.05rem;
+    color: rgba(232, 232, 240, 0.88);
+    letter-spacing: 0.02em;
+  }
+  .name-input {
+    width: 100%;
+    max-width: 480px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255, 216, 107, 0.2);
+    color: var(--text);
+    font-family: 'Zen Kurenaido', sans-serif;
+    font-size: 1rem;
+    padding: 10px 14px;
+    height: 52px;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
+    backdrop-filter: blur(4px);
+  }
+  .name-input:focus {
+    border-color: rgba(255, 216, 107, 0.5);
+    box-shadow: 0 0 20px rgba(255, 216, 107, 0.15);
+  }
+  .name-input::placeholder {
+    color: rgba(200,200,220,0.55);
+  }
+  .begin-btn {
+    margin-top: 8px;
+    padding: 12px 36px;
+    font-family: 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #1a1a2a;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #ffd86b 0%, #ff8fa3 50%, #7ee8fa 100%);
+    box-shadow: 0 0 24px rgba(255, 216, 107, 0.35);
+    transition: transform 0.3s, filter 0.3s, opacity 0.3s;
+  }
+  .begin-btn .begin-note {
+    margin-left: 0.2em;
+    font-size: 1.05em;
+    font-weight: 400;
+  }
+  .begin-btn:hover {
+    transform: scale(1.04);
+    filter: brightness(1.12);
+  }
+  .begin-btn:active {
+    transform: scale(0.98);
+  }
 
   .title-wrap {
     position: fixed;
@@ -55,6 +150,13 @@
     z-index: 20;
     text-align: center;
     pointer-events: none;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .title-wrap.is-hidden {
+    opacity: 0;
+    visibility: hidden;
   }
 
   h1 {
@@ -225,20 +327,55 @@
     bottom: 120px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
-    font-family: 'Pinyon Script', 'Great Vibes', cursive;
-    font-size: clamp(1.4rem, 3.5vw, 2.2rem);
-    color: rgba(255, 245, 220, 0);
+    font-family: 'Noto Serif JP', 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: clamp(1.12rem, 2.8vw, 1.76rem);
+    color: transparent;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 250;
+    transition: transform 2s ease;
+    text-align: center;
+  }
+  .hero-line.show {
+    transform: translateX(-50%) translateY(0);
+  }
+  .hero-line .hero-line-word {
+    display: inline-block;
+    opacity: 0;
+    color: rgba(255, 245, 220, 0.95);
+    text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
+    transition: opacity 0.38s ease;
+  }
+  .hero-line .hero-line-word.is-visible {
+    opacity: 1;
+  }
+
+  .hero-farewell {
+    position: fixed;
+    bottom: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Noto Serif JP', 'Pinyon Script', 'Great Vibes', cursive;
+    font-size: clamp(0.672rem, 1.68vw, 1.056rem);
+    color: transparent;
     text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
     letter-spacing: 0.04em;
     white-space: nowrap;
     pointer-events: none;
     z-index: 250;
-    transition: color 2s ease, transform 2s ease;
     text-align: center;
+    opacity: 0;
   }
-  .hero-line.show {
-    color: rgba(255, 245, 220, 0.95);
-    transform: translateX(-50%) translateY(0);
+  .hero-farewell .farewell-word {
+    display: inline-block;
+    opacity: 0;
+    color: rgba(255, 245, 220, 0.7);
+    text-shadow: 0 0 18px rgba(255, 216, 107, 0.45), 0 0 36px rgba(255, 200, 150, 0.22);
+    transition: opacity 0.28s ease;
+  }
+  .hero-farewell .farewell-word.is-visible {
+    opacity: 1;
   }
 
   body::after {
@@ -265,9 +402,19 @@
 <div class="burst-overlay" id="burstOverlay"></div>
 <div class="phase-name" id="phaseName"></div>
 <div class="hero-line" id="heroLine"></div>
+<div class="hero-farewell" id="heroFarewell" aria-hidden="true"></div>
 
-<div class="app">
-  <div class="title-wrap">
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-inner">
+    <h1 class="welcome-title">Darling Hero</h1>
+    <p class="welcome-prompt">What should I call you?</p>
+    <input type="text" id="nameInput" class="name-input" placeholder="your name…" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off">
+    <button type="button" class="begin-btn" id="beginBtn">Begin <span class="begin-note" aria-hidden="true">♪</span></button>
+  </div>
+</div>
+
+<div class="app" id="mainApp">
+  <div class="title-wrap" id="titleWrap">
     <h1>Darling Hero</h1>
   </div>
 
@@ -429,9 +576,141 @@ const PHASES = {
   }
 };
 
+const HERO_LINE_BY_PHASE = {
+  ikari: (u) => `${u}, I know it's frustrating`,
+  ai: (u) => `${u}, let me carry a little of your pain`,
+  yorokobi: (u) => `${u}, you are someone's light`,
+  shaa: (u) => `${u}, thank you for being alive`,
+  tsukare: (u) => `${u}, you don't have to be perfect`,
+  nozomi: (u) => `${u}, you don't have to give up`,
+  ai_love: (u) => `${u}, I love you just as you are`,
+  shizu: (u) => `${u}, whoever you become, I'll still love that you`
+};
+
+const FAREWELL_MESSAGE = 'See you again';
+const FAREWELL_WORD_STAGGER_MS = 300;
+const FAREWELL_WORD_FADE_MS = 280;
+const FAREWELL_HOLD_MS = 4000;
+const FAREWELL_FADE_OUT_MS = 2000;
+
+function getFarewellSequenceMs() {
+  const words = FAREWELL_MESSAGE.trim().split(/\s+/).filter(Boolean);
+  const revealMs =
+    words.length <= 1
+      ? FAREWELL_WORD_FADE_MS
+      : (words.length - 1) * FAREWELL_WORD_STAGGER_MS + FAREWELL_WORD_FADE_MS;
+  return revealMs + FAREWELL_HOLD_MS + FAREWELL_FADE_OUT_MS;
+}
+
+const HERO_LINE_WORD_STAGGER_MS = 260;
+
+let heroLineTimeouts = [];
+
+function clearHeroLineTimers() {
+  heroLineTimeouts.forEach(clearTimeout);
+  heroLineTimeouts = [];
+}
+
+function startHeroLineWordReveal(el, fullText) {
+  clearHeroLineTimers();
+  el.innerHTML = '';
+  const chunks = fullText.match(/\S+|\s+/g) || [];
+  const wordSpans = [];
+  chunks.forEach(chunk => {
+    if (/^\s+$/.test(chunk)) {
+      el.appendChild(document.createTextNode(chunk));
+    } else {
+      const span = document.createElement('span');
+      span.className = 'hero-line-word';
+      span.textContent = chunk;
+      el.appendChild(span);
+      wordSpans.push(span);
+    }
+  });
+  el.classList.add('show');
+  wordSpans.forEach((span, i) => {
+    const tid = setTimeout(() => {
+      span.classList.add('is-visible');
+    }, i * HERO_LINE_WORD_STAGGER_MS);
+    heroLineTimeouts.push(tid);
+  });
+}
+
+let userName = 'Darling';
+let farewellTimeouts = [];
+
+function clearFarewellTimers() {
+  farewellTimeouts.forEach(clearTimeout);
+  farewellTimeouts = [];
+}
+
+function scheduleHeroFarewell(heroFarewellEl) {
+  clearFarewellTimers();
+  heroFarewellEl.innerHTML = '';
+  heroFarewellEl.style.transition = 'none';
+  heroFarewellEl.style.opacity = '1';
+  heroFarewellEl.style.color = 'transparent';
+
+  const words = FAREWELL_MESSAGE.trim().split(/\s+/).filter(Boolean);
+  const wordSpans = [];
+  words.forEach((word, i) => {
+    const span = document.createElement('span');
+    span.className = 'farewell-word';
+    span.textContent = word;
+    heroFarewellEl.appendChild(span);
+    wordSpans.push(span);
+    if (i < words.length - 1) {
+      heroFarewellEl.appendChild(document.createTextNode(' '));
+    }
+  });
+
+  wordSpans.forEach((span, i) => {
+    const tid = setTimeout(() => {
+      span.classList.add('is-visible');
+    }, i * FAREWELL_WORD_STAGGER_MS);
+    farewellTimeouts.push(tid);
+  });
+
+  const revealMs =
+    words.length <= 1
+      ? FAREWELL_WORD_FADE_MS
+      : (words.length - 1) * FAREWELL_WORD_STAGGER_MS + FAREWELL_WORD_FADE_MS;
+  const fadeOutStart = revealMs + FAREWELL_HOLD_MS;
+
+  const tFade = setTimeout(() => {
+    heroFarewellEl.style.transition = 'opacity 2s ease';
+    heroFarewellEl.style.opacity = '0';
+  }, fadeOutStart);
+  farewellTimeouts.push(tFade);
+
+  const tClear = setTimeout(() => {
+    heroFarewellEl.innerHTML = '';
+    heroFarewellEl.style.transition = 'none';
+    heroFarewellEl.style.opacity = '0';
+    heroFarewellEl.style.color = 'rgba(255, 245, 220, 0)';
+  }, fadeOutStart + FAREWELL_FADE_OUT_MS);
+  farewellTimeouts.push(tClear);
+}
+
+function beginMainExperience() {
+  const raw = document.getElementById('nameInput').value.trim();
+  userName = raw.length ? raw : 'Darling';
+  document.getElementById('welcomeScreen').classList.add('hide');
+  document.getElementById('mainApp').classList.add('app-visible');
+  setTimeout(() => document.getElementById('input').focus(), 1300);
+}
+
 // ============================================================
 // AI判定システム
 // ============================================================
+const VALID_PHASE_KEYS = ['ikari', 'ai', 'yorokobi', 'shaa', 'tsukare', 'nozomi', 'ai_love', 'shizu'];
+
+function normalizePhaseKey(raw) {
+  if (raw == null || raw === '') return 'shizu';
+  const s = String(raw).trim().toLowerCase().replace(/["'\u201c\u201d]/g, '');
+  return VALID_PHASE_KEYS.includes(s) ? s : 'shizu';
+}
+
 let cachedJudgment = null;
 let cachedText = '';
 let judgmentInProgress = false;
@@ -443,11 +722,18 @@ async function judgeEmotion(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text })
     });
-    if (!response.ok) return 'shizu';
+    console.log('[Darling Hero] judgeEmotion HTTP', { ok: response.ok, status: response.status });
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      console.warn('[Darling Hero] judgeEmotion non-OK body', errBody.slice(0, 400));
+      return 'shizu';
+    }
     const data = await response.json();
-    return data.phase || 'shizu';
+    const key = normalizePhaseKey(data.phase);
+    console.log('[Darling Hero] judgeEmotion response', { phaseRaw: data.phase, phaseKey: key });
+    return key;
   } catch (e) {
-    console.error('Judgment error:', e);
+    console.error('[Darling Hero] judgeEmotion error', e);
     return 'shizu';
   }
 }
@@ -470,9 +756,35 @@ function scheduleJudgment(text) {
   }, 800);
 }
 
-async function getPhaseForText(text) {
+async function getPhaseForText(text, forceFresh = false) {
+  if (forceFresh) {
+    if (judgmentTimer) {
+      clearTimeout(judgmentTimer);
+      judgmentTimer = null;
+    }
+    if (judgmentInProgress) {
+      for (let i = 0; i < 40; i++) {
+        await new Promise(r => setTimeout(r, 100));
+        if (!judgmentInProgress) break;
+      }
+    }
+    cachedJudgment = null;
+    cachedText = '';
+    const key = await judgeEmotion(text);
+    const phase = PHASES[key] || PHASES.shizu;
+    console.log('[Darling Hero] getPhaseForText(forceFresh)', {
+      textLen: text.length,
+      textPreview: text.slice(0, 100),
+      phaseKey: key,
+      phaseName: phase.name
+    });
+    cachedJudgment = key;
+    cachedText = text;
+    return { phase, key };
+  }
   if (cachedText === text && cachedJudgment) {
-    return PHASES[cachedJudgment] || PHASES.shizu;
+    const key = cachedJudgment;
+    return { phase: PHASES[key] || PHASES.shizu, key };
   }
   if (judgmentInProgress) {
     for (let i = 0; i < 20; i++) {
@@ -480,11 +792,12 @@ async function getPhaseForText(text) {
       if (!judgmentInProgress) break;
     }
     if (cachedText === text && cachedJudgment) {
-      return PHASES[cachedJudgment] || PHASES.shizu;
+      const key = cachedJudgment;
+      return { phase: PHASES[key] || PHASES.shizu, key };
     }
   }
-  const phaseKey = await judgeEmotion(text);
-  return PHASES[phaseKey] || PHASES.shizu;
+  const key = await judgeEmotion(text);
+  return { phase: PHASES[key] || PHASES.shizu, key };
 }
 
 // ============================================================
@@ -871,14 +1184,29 @@ async function release() {
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
 
+  clearFarewellTimers();
+  clearHeroLineTimers();
+  const heroFarewellEl = document.getElementById('heroFarewell');
+  const heroLineEl = document.getElementById('heroLine');
+  heroFarewellEl.innerHTML = '';
+  heroFarewellEl.style.opacity = '0';
+  heroFarewellEl.style.transition = 'none';
+  heroFarewellEl.style.color = 'transparent';
+  heroLineEl.classList.remove('show');
+  heroLineEl.innerHTML = '';
+
   // 入力ロック
   inputEl.disabled = true;
   inputEl.placeholder = '';
   releaseBtn.disabled = true;
   inputEl.blur();
 
-  // 相を取得
-  const phase = await getPhaseForText(text);
+  document.getElementById('titleWrap').classList.add('is-hidden');
+
+  // 相を取得（release 時はキャッシュを使わず必ず API 判定）
+  const { phase, key: phaseKey } = await getPhaseForText(text, true);
+  const lineFn = HERO_LINE_BY_PHASE[phaseKey] || HERO_LINE_BY_PHASE.shizu;
+  console.log('[Darling Hero] release heroLine', { phaseKey, lineSample: lineFn(userName).slice(0, 80) });
 
   // 入力欄クリア
   inputEl.value = '';
@@ -905,16 +1233,30 @@ async function release() {
   }, Math.min(2200, phase.laserDuration * 0.45));
 
   // 最後の一行を表示（演出が落ち着いた頃）
-  const heroLineEl = document.getElementById('heroLine');
-  heroLineEl.textContent = 'Darling 🩷 no one else can imitate';
-  setTimeout(() => heroLineEl.classList.add('show'), phase.laserDuration + 800);
+  const heroLineText = lineFn(userName);
+  const heroLineShowAt = phase.laserDuration + 800;
+  setTimeout(() => {
+    startHeroLineWordReveal(heroLineEl, heroLineText);
+  }, heroLineShowAt);
+
+  setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
+
+  const farewellSequenceMs = getFarewellSequenceMs();
+  const farewellEnd = heroLineShowAt + 5000 + farewellSequenceMs;
+  const totalDuration = Math.max(phase.laserDuration + 4500, farewellEnd + 400);
 
   // フェードアウト
-  const totalDuration = phase.laserDuration + 4500;
   setTimeout(() => {
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
     heroLineEl.classList.remove('show');
+    clearFarewellTimers();
+    clearHeroLineTimers();
+    heroLineEl.innerHTML = '';
+    heroFarewellEl.innerHTML = '';
+    heroFarewellEl.style.transition = 'opacity 0.6s ease';
+    heroFarewellEl.style.opacity = '0';
+    heroFarewellEl.style.color = 'transparent';
   }, totalDuration);
 
   // 入力欄を再開放
@@ -922,6 +1264,7 @@ async function release() {
     inputEl.disabled = false;
     inputEl.placeholder = 'write your feeling…';
     releaseBtn.disabled = false;
+    document.getElementById('titleWrap').classList.remove('is-hidden');
     cachedJudgment = null;
     cachedText = '';
   }, totalDuration + 1000);
@@ -937,6 +1280,16 @@ inputElement.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     release();
+  }
+});
+
+const nameInputEl = document.getElementById('nameInput');
+const beginBtn = document.getElementById('beginBtn');
+beginBtn.addEventListener('click', beginMainExperience);
+nameInputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    beginMainExperience();
   }
 });
 </script>
