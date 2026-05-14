@@ -338,21 +338,37 @@
     left: 50%;
     transform: translateX(-50%) translateY(10px);
     display: inline-flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: center;
     gap: var(--hero-msg-word-gap);
     max-width: 96vw;
     font-family: 'Great Vibes', 'Allura', 'Pinyon Script', cursive;
-    font-size: clamp(2.24rem, 5.6vw, 3.52rem);
+    /* スマホ：全体を 0.8× にし、折り返しで収める */
+    font-size: clamp(1.792rem, 4.48vw, 2.816rem);
     font-weight: 400;
     color: transparent;
     letter-spacing: 0.02em;
-    white-space: nowrap;
+    white-space: normal;
     pointer-events: none;
     z-index: 250;
     transition: transform 2s ease;
     text-align: center;
+  }
+  .hero-line.hero-line--stacked {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.12em;
+  }
+  .hero-line-row {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--hero-msg-word-gap);
+    max-width: min(96vw, 100%);
+    overflow-wrap: anywhere;
   }
   .hero-line.show {
     transform: translateX(-50%) translateY(0);
@@ -414,6 +430,9 @@
       font-size: 1.4rem;
     }
     .hero-line {
+      flex-direction: row;
+      flex-wrap: nowrap;
+      white-space: nowrap;
       font-size: clamp(1.568rem, 3.92vw, 2.464rem);
     }
     .hero-farewell {
@@ -631,6 +650,18 @@ const HERO_LINE_BY_PHASE = {
   shizu: (u) => `${u}, whoever you become, I'll still love that you`
 };
 
+/** スマホ（幅640px以下）のみ：文言を短めにし、2行レイアウトと組み合わせて収める */
+const HERO_LINE_BY_PHASE_MOBILE = {
+  ikari: (u) => `${u}, I know it's hard`,
+  ai: (u) => `${u}, let me share your pain`,
+  yorokobi: (u) => `${u}, you're someone's light`,
+  shaa: (u) => `${u}, thanks for being alive`,
+  tsukare: (u) => `${u}, you needn't be perfect`,
+  nozomi: (u) => `${u}, don't give up`,
+  ai_love: (u) => `${u}, I love you as you are`,
+  shizu: (u) => `${u}, I'll love whoever you become`
+};
+
 const FAREWELL_MESSAGE = 'See you again';
 const FAREWELL_WORD_STAGGER_MS = 300;
 const FAREWELL_WORD_FADE_MS = 280;
@@ -658,19 +689,40 @@ function clearHeroLineTimers() {
   heroLineTimeouts = [];
 }
 
-function startHeroLineWordReveal(el, fullText) {
-  clearHeroLineTimers();
-  el.innerHTML = '';
-  const chunks = fullText.match(/\S+|\s+/g) || [];
-  const wordSpans = [];
+function appendHeroLineWordChunks(parent, text, wordSpans) {
+  const chunks = text.match(/\S+|\s+/g) || [];
   chunks.forEach(chunk => {
     if (/^\s+$/.test(chunk)) return;
     const span = document.createElement('span');
     span.className = 'hero-line-word';
     span.textContent = chunk;
-    el.appendChild(span);
+    parent.appendChild(span);
     wordSpans.push(span);
   });
+}
+
+function startHeroLineWordReveal(el, fullText) {
+  clearHeroLineTimers();
+  el.innerHTML = '';
+  const isMobile = window.matchMedia('(max-width: 640px)').matches;
+  const commaIdx = fullText.indexOf(', ');
+  const wordSpans = [];
+
+  if (isMobile && commaIdx !== -1) {
+    el.classList.add('hero-line--stacked');
+    const row1 = document.createElement('span');
+    row1.className = 'hero-line-row';
+    const row2 = document.createElement('span');
+    row2.className = 'hero-line-row';
+    el.appendChild(row1);
+    el.appendChild(row2);
+    appendHeroLineWordChunks(row1, fullText.slice(0, commaIdx + 1), wordSpans);
+    appendHeroLineWordChunks(row2, fullText.slice(commaIdx + 2), wordSpans);
+  } else {
+    el.classList.remove('hero-line--stacked');
+    appendHeroLineWordChunks(el, fullText, wordSpans);
+  }
+
   el.classList.add('show');
   wordSpans.forEach((span, i) => {
     const tid = setTimeout(() => {
@@ -1249,8 +1301,12 @@ async function release() {
 
   // 相を取得（release 時はキャッシュを使わず必ず API 判定）
   const { phase, key: phaseKey } = await getPhaseForText(text, true);
-  const lineFn = HERO_LINE_BY_PHASE[phaseKey] || HERO_LINE_BY_PHASE.shizu;
-  console.log('[Darling Hero] release heroLine', { phaseKey, lineSample: lineFn(userName).slice(0, 80) });
+  const lineFnDesktop = HERO_LINE_BY_PHASE[phaseKey] || HERO_LINE_BY_PHASE.shizu;
+  const isHeroLineMobile = window.matchMedia('(max-width: 640px)').matches;
+  const heroLineFn = isHeroLineMobile
+    ? (HERO_LINE_BY_PHASE_MOBILE[phaseKey] || HERO_LINE_BY_PHASE_MOBILE.shizu)
+    : lineFnDesktop;
+  console.log('[Darling Hero] release heroLine', { phaseKey, lineSample: heroLineFn(userName).slice(0, 80) });
 
   // 入力欄クリア
   inputEl.value = '';
@@ -1277,7 +1333,7 @@ async function release() {
   }, Math.min(2200, phase.laserDuration * 0.45));
 
   // 最後の一行を表示（演出が落ち着いた頃）
-  const heroLineText = lineFn(userName);
+  const heroLineText = heroLineFn(userName);
   const heroLineShowAt = phase.laserDuration + 800;
   setTimeout(() => {
     startHeroLineWordReveal(heroLineEl, heroLineText);
