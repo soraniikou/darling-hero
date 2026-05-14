@@ -11,6 +11,9 @@
   :root {
     --black: #050508;
     --text: #e8e8f0;
+    /* 単語間 ≈1スペース幅を基準に 1.3 倍（flex gap） */
+    --hero-msg-space-ref: 0.28em;
+    --hero-msg-word-gap: calc(var(--hero-msg-space-ref) * 1.3);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -328,16 +331,23 @@
     transform: translateY(0);
   }
 
-  /* 最後の一行：Hero Line */
+  /* 最後の一行：Hero Line（筆記体・単語間 1.3 倍） */
   .hero-line {
     position: fixed;
     bottom: 120px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
-    font-family: 'Noto Serif JP', 'Pinyon Script', 'Great Vibes', cursive;
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--hero-msg-word-gap);
+    max-width: 96vw;
+    font-family: 'Great Vibes', 'Allura', 'Pinyon Script', cursive;
     font-size: clamp(1.12rem, 2.8vw, 1.76rem);
+    font-weight: 400;
     color: transparent;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
     white-space: nowrap;
     pointer-events: none;
     z-index: 250;
@@ -350,6 +360,8 @@
   .hero-line .hero-line-word {
     display: inline-block;
     opacity: 0;
+    font-family: inherit;
+    font-weight: inherit;
     color: rgba(255, 245, 220, 0.95);
     text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
     transition: opacity 0.38s ease;
@@ -363,11 +375,17 @@
     bottom: 72px;
     left: 50%;
     transform: translateX(-50%);
-    font-family: 'Noto Serif JP', 'Pinyon Script', 'Great Vibes', cursive;
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--hero-msg-word-gap);
+    max-width: 96vw;
+    font-family: 'Great Vibes', 'Allura', 'Pinyon Script', cursive;
     font-size: clamp(0.672rem, 1.68vw, 1.056rem);
+    font-weight: 400;
     color: transparent;
-    text-shadow: 0 0 24px rgba(255, 216, 107, 0.6), 0 0 50px rgba(255, 200, 150, 0.3);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
     white-space: nowrap;
     pointer-events: none;
     z-index: 250;
@@ -377,6 +395,8 @@
   .hero-farewell .farewell-word {
     display: inline-block;
     opacity: 0;
+    font-family: inherit;
+    font-weight: inherit;
     color: rgba(255, 245, 220, 0.7);
     text-shadow: 0 0 18px rgba(255, 216, 107, 0.45), 0 0 36px rgba(255, 200, 150, 0.22);
     transition: opacity 0.28s ease;
@@ -627,15 +647,12 @@ function startHeroLineWordReveal(el, fullText) {
   const chunks = fullText.match(/\S+|\s+/g) || [];
   const wordSpans = [];
   chunks.forEach(chunk => {
-    if (/^\s+$/.test(chunk)) {
-      el.appendChild(document.createTextNode(chunk));
-    } else {
-      const span = document.createElement('span');
-      span.className = 'hero-line-word';
-      span.textContent = chunk;
-      el.appendChild(span);
-      wordSpans.push(span);
-    }
+    if (/^\s+$/.test(chunk)) return;
+    const span = document.createElement('span');
+    span.className = 'hero-line-word';
+    span.textContent = chunk;
+    el.appendChild(span);
+    wordSpans.push(span);
   });
   el.classList.add('show');
   wordSpans.forEach((span, i) => {
@@ -663,15 +680,12 @@ function scheduleHeroFarewell(heroFarewellEl) {
 
   const words = FAREWELL_MESSAGE.trim().split(/\s+/).filter(Boolean);
   const wordSpans = [];
-  words.forEach((word, i) => {
+  words.forEach(word => {
     const span = document.createElement('span');
     span.className = 'farewell-word';
     span.textContent = word;
     heroFarewellEl.appendChild(span);
     wordSpans.push(span);
-    if (i < words.length - 1) {
-      heroFarewellEl.appendChild(document.createTextNode(' '));
-    }
   });
 
   wordSpans.forEach((span, i) => {
@@ -1214,6 +1228,8 @@ async function release() {
   releaseBtn.disabled = true;
   inputEl.blur();
 
+  document.getElementById('titleWrap').classList.add('is-hidden');
+
   // 相を取得（release 時はキャッシュを使わず必ず API 判定）
   const { phase, key: phaseKey } = await getPhaseForText(text, true);
   const lineFn = HERO_LINE_BY_PHASE[phaseKey] || HERO_LINE_BY_PHASE.shizu;
@@ -1282,6 +1298,7 @@ async function release() {
     inputEl.disabled = false;
     inputEl.placeholder = 'write your feeling…';
     releaseBtn.disabled = false;
+    document.getElementById('titleWrap').classList.remove('is-hidden');
     cachedJudgment = null;
     cachedText = '';
   }, inputReadyAt);
