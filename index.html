@@ -207,6 +207,12 @@
     text-shadow: 0 0 14px rgba(255, 216, 107, 0.5);
     line-height: 1;
   }
+  .input-arrow.input-arrow--hidden-cinematic {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
 
   textarea {
     flex: 1;
@@ -1448,6 +1454,7 @@ async function release() {
   heroLineEl.innerHTML = '';
 
   const inputRowEl = document.getElementById('inputRow');
+  const inputArrowEl = inputRowEl.querySelector('.input-arrow');
   inputRowEl.classList.remove('input-row--hidden');
 
   // 入力ロック
@@ -1455,6 +1462,8 @@ async function release() {
   inputEl.placeholder = '';
   releaseBtn.disabled = true;
   releaseBtn.classList.remove('release-btn--hidden-cinematic');
+  if (inputArrowEl) inputArrowEl.classList.remove('input-arrow--hidden-cinematic');
+  if (inputArrowEl) inputArrowEl.classList.add('input-arrow--hidden-cinematic');
   inputEl.blur();
 
   document.getElementById('titleWrap').classList.add('is-hidden');
@@ -1534,6 +1543,8 @@ async function release() {
   setTimeout(() => {
     document.getElementById('inputRow').classList.remove('input-row--hidden');
     document.getElementById('releaseBtn').classList.remove('release-btn--hidden-cinematic');
+    const ia = document.querySelector('.input-arrow');
+    if (ia) ia.classList.remove('input-arrow--hidden-cinematic');
   }, silenceEndAt);
 
   const inputReadyAt = silenceEndAt + INPUT_UI_FADE_IN_MS + 150;
