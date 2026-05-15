@@ -274,6 +274,12 @@
     cursor: default;
     pointer-events: none;
   }
+  .release-btn.release-btn--hidden-cinematic {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease, visibility 0.45s ease;
+  }
 
   .spotlight-glow {
     position: fixed;
@@ -798,10 +804,46 @@ function beginMainExperience() {
 // ============================================================
 const VALID_PHASE_KEYS = ['ikari', 'ai', 'yorokobi', 'shaa', 'tsukare', 'nozomi', 'ai_love', 'shizu'];
 
+/** API が英語名・別表記で返す場合の正規化（8相キーへ） */
+const PHASE_ALIAS_TO_KEY = {
+  ikari: 'ikari',
+  anger: 'ikari',
+  ai: 'ai',
+  sorrow: 'ai',
+  sadness: 'ai',
+  yorokobi: 'yorokobi',
+  joy: 'yorokobi',
+  shaa: 'shaa',
+  gratitude: 'shaa',
+  thanks: 'shaa',
+  tsukare: 'tsukare',
+  weariness: 'tsukare',
+  weary: 'tsukare',
+  fatigue: 'tsukare',
+  nozomi: 'nozomi',
+  hope: 'nozomi',
+  ai_love: 'ai_love',
+  ailove: 'ai_love',
+  'ai-love': 'ai_love',
+  'ai love': 'ai_love',
+  love: 'ai_love',
+  shizu: 'shizu',
+  stillness: 'shizu',
+  calm: 'shizu',
+  quiet: 'shizu',
+  peace: 'shizu'
+};
+
 function normalizePhaseKey(raw) {
   if (raw == null || raw === '') return 'shizu';
-  const s = String(raw).trim().toLowerCase().replace(/["'\u201c\u201d]/g, '');
-  return VALID_PHASE_KEYS.includes(s) ? s : 'shizu';
+  let s = String(raw).trim().toLowerCase().replace(/["'\u201c\u201d]/g, '');
+  s = s.replace(/[\u3000]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (VALID_PHASE_KEYS.includes(s)) return s;
+  const compact = s.replace(/\s+/g, '');
+  if (VALID_PHASE_KEYS.includes(compact)) return compact;
+  if (PHASE_ALIAS_TO_KEY[s]) return PHASE_ALIAS_TO_KEY[s];
+  if (PHASE_ALIAS_TO_KEY[compact]) return PHASE_ALIAS_TO_KEY[compact];
+  return 'shizu';
 }
 
 let cachedJudgment = null;
@@ -938,6 +980,106 @@ let heroSparkles = [];
 let burstCharSpans = [];
 let heroBrightness = 0;
 
+/** 0=通常△背景、1=ミラーボール魔法（名前付き行〜入力復帰まで） */
+let mirrorBallBlend = 0;
+let mirrorBallEaseIn = false;
+let mirrorBallEaseOut = false;
+let mirrorBallPhase = 0;
+
+function beginMirrorBallBackgroundTransition() {
+  mirrorBallEaseOut = false;
+  mirrorBallEaseIn = true;
+}
+
+function endMirrorBallBackgroundTransition() {
+  mirrorBallEaseIn = false;
+  mirrorBallEaseOut = true;
+}
+
+function resetMirrorBallBackground() {
+  mirrorBallEaseIn = false;
+  mirrorBallEaseOut = false;
+  mirrorBallBlend = 0;
+  mirrorBallPhase = 0;
+}
+
+/** 暗めシャボン玉＋控えめハイライト（メッセージの視認性を優先） */
+const mirrorSoapBubbles = [];
+for (let i = 0; i < 48; i++) {
+  mirrorSoapBubbles.push({
+    x: Math.random() * 2200 - 100,
+    y: Math.random() * 1600 - 100,
+    r: 18 + Math.random() * 72,
+    vx: (Math.random() - 0.5) * 0.42,
+    vy: (Math.random() - 0.48) * 0.36,
+    hue: Math.random() * 360,
+    wobble: Math.random() * Math.PI * 2,
+    wobbleSpeed: 0.012 + Math.random() * 0.018
+  });
+}
+
+function drawMirrorSoapBubbles(b) {
+  if (b <= 0.001) return;
+  const t = mirrorBallPhase;
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+
+  mirrorSoapBubbles.forEach(bb => {
+    bb.x += bb.vx;
+    bb.y += bb.vy;
+    bb.wobble += bb.wobbleSpeed;
+    if (bb.x < -bb.r - 80) bb.x = W + bb.r + 40;
+    if (bb.x > W + bb.r + 80) bb.x = -bb.r - 40;
+    if (bb.y < -bb.r - 80) bb.y = H + bb.r + 40;
+    if (bb.y > H + bb.r + 80) bb.y = -bb.r - 40;
+
+    const cx = bb.x;
+    const cy = bb.y;
+    const pulse = 0.94 + 0.06 * Math.sin(bb.wobble);
+    const R = bb.r * pulse;
+    const bodyAlpha = b * (0.07 + 0.05 * Math.sin(bb.wobble * 1.1));
+
+    const g = ctx.createRadialGradient(
+      cx - R * 0.22,
+      cy - R * 0.22,
+      Math.max(2, R * 0.06),
+      cx,
+      cy,
+      R
+    );
+    g.addColorStop(0, `rgba(55,52,78,${bodyAlpha * 1.1})`);
+    g.addColorStop(0.35, `rgba(18,16,32,${bodyAlpha * 0.9})`);
+    g.addColorStop(0.72, `rgba(12,10,26,${bodyAlpha * 0.55})`);
+    g.addColorStop(1, 'rgba(5,5,10,0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    const hue = (bb.hue + t * 10) % 360;
+    ctx.globalAlpha = b * (0.14 + 0.1 * Math.sin(bb.wobble * 1.7));
+    ctx.strokeStyle = `hsla(${hue}, 28%, 48%, 0.22)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.97, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const sx = cx - R * 0.28;
+    const sy = cy - R * 0.3;
+    ctx.globalAlpha = b * 0.1;
+    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, R * 0.28);
+    sg.addColorStop(0, 'rgba(255,255,255,0.35)');
+    sg.addColorStop(0.5, 'rgba(200,220,255,0.08)');
+    sg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(sx, sy, R * 0.26, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
 function drawTriangle(cx, cy, size, rot) {
   ctx.beginPath();
   for (let i = 0; i < 3; i++) {
@@ -951,20 +1093,32 @@ function drawTriangle(cx, cy, size, rot) {
 
 function loop() {
   requestAnimationFrame(loop);
-  ctx.fillStyle = 'rgba(5,5,8,0.18)';
+  if (mirrorBallEaseIn) {
+    mirrorBallBlend = Math.min(1, mirrorBallBlend + 0.0038);
+  } else if (mirrorBallEaseOut) {
+    mirrorBallBlend = Math.max(0, mirrorBallBlend - 0.0055);
+    if (mirrorBallBlend <= 0) mirrorBallEaseOut = false;
+  }
+  mirrorBallPhase += 0.014;
+
+  const mb = mirrorBallBlend;
+  const trailA = 0.18 * (1 - mb * 0.9);
+  ctx.fillStyle = `rgba(8,6,16,${trailA})`;
   ctx.fillRect(0, 0, W, H);
 
   const brightnessBoost = Math.min(0.4, heroBrightness);
+  const starBoost = 1 + mb * 0.08;
   particles.forEach(p => {
     p.twinkle += 0.02;
     const baseA = p.alpha * (0.5 + 0.5 * Math.sin(p.twinkle));
-    const a = Math.min(1, baseA + brightnessBoost);
+    const a = Math.min(1, (baseA + brightnessBoost) * starBoost);
     ctx.beginPath();
     ctx.arc(p.x % W, p.y % H, p.r, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,255,255,${a})`;
     ctx.fill();
   });
 
+  const triMul = 1 - mb;
   triMarks.forEach(tr => {
     tr.x += tr.vx; tr.y += tr.vy; tr.rot += tr.vr;
     if (tr.x < -300) tr.x = W + 200;
@@ -974,11 +1128,11 @@ function loop() {
     const sx = tr.x, sy = tr.y, s = tr.size;
     const shadowOff = s * 0.08;
     ctx.save();
-    ctx.globalAlpha = tr.alpha;
+    ctx.globalAlpha = tr.alpha * triMul;
     drawTriangle(sx + shadowOff, sy + shadowOff, s, tr.rot);
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = tr.alpha * triMul;
     drawTriangle(sx, sy, s, tr.rot);
     const g = ctx.createLinearGradient(sx - s, sy - s, sx + s, sy + s);
     g.addColorStop(0, tr.color);
@@ -989,6 +1143,8 @@ function loop() {
     ctx.fill();
     ctx.restore();
   });
+
+  drawMirrorSoapBubbles(mb);
 
   heroSparkles = heroSparkles.filter(s => s.life > 0);
   heroSparkles.forEach(s => {
@@ -1280,6 +1436,7 @@ async function release() {
   clearFarewellTimers();
   clearHeroLineTimers();
   clearHeroLineExitTimeout();
+  resetMirrorBallBackground();
   const heroFarewellEl = document.getElementById('heroFarewell');
   const heroLineEl = document.getElementById('heroLine');
   heroFarewellEl.innerHTML = '';
@@ -1297,6 +1454,7 @@ async function release() {
   inputEl.disabled = true;
   inputEl.placeholder = '';
   releaseBtn.disabled = true;
+  releaseBtn.classList.remove('release-btn--hidden-cinematic');
   inputEl.blur();
 
   document.getElementById('titleWrap').classList.add('is-hidden');
@@ -1334,6 +1492,8 @@ async function release() {
   const heroLineText = lineFn(userName);
   const heroLineShowAt = phase.laserDuration + 800;
   setTimeout(() => {
+    releaseBtn.classList.add('release-btn--hidden-cinematic');
+    beginMirrorBallBackgroundTransition();
     startHeroLineWordReveal(heroLineEl, heroLineText);
   }, heroLineShowAt);
 
@@ -1373,10 +1533,12 @@ async function release() {
     totalDuration + HERO_LINE_EXIT_DURATION_MS + POST_FAREWELL_SILENCE_MS;
   setTimeout(() => {
     document.getElementById('inputRow').classList.remove('input-row--hidden');
+    document.getElementById('releaseBtn').classList.remove('release-btn--hidden-cinematic');
   }, silenceEndAt);
 
   const inputReadyAt = silenceEndAt + INPUT_UI_FADE_IN_MS + 150;
   setTimeout(() => {
+    endMirrorBallBackgroundTransition();
     inputEl.disabled = false;
     inputEl.placeholder = 'write your feeling…';
     releaseBtn.disabled = false;

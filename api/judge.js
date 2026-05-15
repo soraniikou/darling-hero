@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 50,
         system: systemPrompt,
         messages: [
@@ -63,21 +63,51 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const aiText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '{}';
+    const aiText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
 
-    let phase = 'shizu';
-    try {
-      const match = aiText.match(/\{[^}]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        const validPhases = ['ikari', 'ai', 'yorokobi', 'shaa', 'tsukare', 'nozomi', 'ai_love', 'shizu'];
-        if (validPhases.includes(parsed.phase)) {
-          phase = parsed.phase;
+    const validPhases = ['ikari', 'ai', 'yorokobi', 'shaa', 'tsukare', 'nozomi', 'ai_love', 'shizu'];
+
+    function stripCodeFences(s) {
+      return s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+    }
+
+    function extractPhaseFromModelText(raw) {
+      if (!raw) return null;
+      const s = stripCodeFences(raw);
+
+      try {
+        const parsed = JSON.parse(s);
+        if (parsed && typeof parsed.phase === 'string' && validPhases.includes(parsed.phase.trim())) {
+          return parsed.phase.trim();
+        }
+      } catch (_) {
+        /* fall through */
+      }
+
+      const brace = s.match(/\{[\s\S]*?\}/);
+      if (brace) {
+        try {
+          const parsed = JSON.parse(brace[0]);
+          if (parsed && typeof parsed.phase === 'string' && validPhases.includes(parsed.phase.trim())) {
+            return parsed.phase.trim();
+          }
+        } catch (_) {
+          /* fall through */
         }
       }
-    } catch (e) {
-      console.error('Parse error:', e.message, 'aiText:', aiText);
+
+      const m =
+        s.match(/"phase"\s*:\s*"([a-z_]+)"/i) ||
+        s.match(/"phase"\s*:\s*'([a-z_]+)'/i) ||
+        s.match(/'phase'\s*:\s*'([a-z_]+)'/i) ||
+        s.match(/\bphase\b\s*[:=]\s*['"]?([a-z_]+)/i);
+      if (m && validPhases.includes(m[1])) return m[1];
+
+      return null;
     }
+
+    let phase = extractPhaseFromModelText(aiText) || 'shizu';
+    if (!validPhases.includes(phase)) phase = 'shizu';
 
     return res.status(200).json({ phase });
 
