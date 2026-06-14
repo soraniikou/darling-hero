@@ -97,11 +97,21 @@
     color: rgba(232, 232, 240, 0.88);
     letter-spacing: 0.02em;
   }
+  @keyframes nameBreath {
+    0%, 100% {
+      border-color: rgba(135, 205, 90, 0.1);
+      box-shadow: none;
+    }
+    50% {
+      border-color: rgba(135, 205, 90, 0.58);
+      box-shadow: 0 0 14px rgba(135, 205, 90, 0.18);
+    }
+  }
   .name-input {
     width: 100%;
     max-width: 480px;
     background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255, 216, 107, 0.2);
+    border: 1px solid rgba(135, 205, 90, 0.1);
     color: var(--text);
     font-family: 'Zen Kurenaido', sans-serif;
     font-size: 1rem;
@@ -111,10 +121,12 @@
     outline: none;
     transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
     backdrop-filter: blur(4px);
+    animation: nameBreath 2.8s ease-in-out infinite;
   }
   .name-input:focus {
-    border-color: rgba(255, 216, 107, 0.5);
-    box-shadow: 0 0 20px rgba(255, 216, 107, 0.15);
+    border-color: rgba(135, 205, 90, 0.65);
+    box-shadow: 0 0 20px rgba(135, 205, 90, 0.22);
+    animation: none;
   }
   .name-input::placeholder {
     color: rgba(200,200,220,0.55);
@@ -488,7 +500,7 @@
   <div class="welcome-inner">
     <h1 class="welcome-title">Darling Hero</h1>
     <p class="welcome-prompt">What should I call you?</p>
-    <input type="text" id="nameInput" class="name-input" placeholder="your name…" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off">
+    <input type="text" id="nameInput" class="name-input" placeholder="your nickname…" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" autofocus>
     <button type="button" class="begin-btn" id="beginBtn"><span class="begin-note" aria-hidden="true">♪</span> Begin <span class="begin-mic" aria-hidden="true">🎤</span></button>
   </div>
 </div>
@@ -1235,6 +1247,7 @@ resizeLaser();
 window.addEventListener('resize', resizeLaser);
 
 let lasers = [];
+let laserRainbowHue = 0;
 
 function spawnLaser(phase) {
   const cx = laserCanvas.width / 2;
@@ -1249,6 +1262,8 @@ function spawnLaser(phase) {
   const color = phase.laserColors[colorIdx];
   const [minSpeed, maxSpeed] = phase.laserSpeedRange;
 
+  laserRainbowHue = (laserRainbowHue + 47) % 360;
+
   lasers.push({
     sx: startX, sy: startY,
     tx: targetX, ty: targetY,
@@ -1258,6 +1273,7 @@ function spawnLaser(phase) {
     life: 80,
     maxLife: 80,
     color: color,
+    rainbowHue: laserRainbowHue,
     fadeStart: false
   });
 }
@@ -1305,16 +1321,23 @@ function drawLasers() {
     const tailY = l.sy + (l.ty - l.sy) * tailProgress;
     const lifeAlpha = l.fadeStart ? l.life / l.maxLife : 1;
 
-    const grad = laserCtx.createLinearGradient(tailX, tailY, headX, headY);
-    grad.addColorStop(0, `rgba(${l.color.glow},0)`);
-    grad.addColorStop(0.6, `rgba(${l.color.glow},${0.3 * lifeAlpha})`);
-    grad.addColorStop(1, `rgba(${l.color.core},${0.95 * lifeAlpha})`);
+    const rh = l.rainbowHue;
+    const rh1 = (rh + 50) % 360;
+    const rh2 = (rh + 100) % 360;
+    const rh3 = (rh + 160) % 360;
+
+    // Layer 1: wide outer glow — hue shifts along beam for iridescence
+    const glowGrad = laserCtx.createLinearGradient(tailX, tailY, headX, headY);
+    glowGrad.addColorStop(0,    `hsla(${rh},100%,62%,0)`);
+    glowGrad.addColorStop(0.25, `hsla(${rh1},100%,65%,${0.22 * lifeAlpha})`);
+    glowGrad.addColorStop(0.6,  `hsla(${rh2},100%,68%,${0.38 * lifeAlpha})`);
+    glowGrad.addColorStop(1,    `hsla(${rh3},100%,72%,${0.88 * lifeAlpha})`);
 
     laserCtx.save();
-    laserCtx.shadowColor = `rgba(${l.color.glow},${0.8 * lifeAlpha})`;
-    laserCtx.shadowBlur = 18;
-    laserCtx.strokeStyle = grad;
-    laserCtx.lineWidth = l.thickness * 2.2;
+    laserCtx.shadowColor = `hsla(${rh},100%,65%,${0.9 * lifeAlpha})`;
+    laserCtx.shadowBlur = 28;
+    laserCtx.strokeStyle = glowGrad;
+    laserCtx.lineWidth = l.thickness * 3.8;
     laserCtx.lineCap = 'round';
     laserCtx.beginPath();
     laserCtx.moveTo(tailX, tailY);
@@ -1322,9 +1345,27 @@ function drawLasers() {
     laserCtx.stroke();
     laserCtx.restore();
 
+    // Layer 2: mid shimmer — brighter, shifted hues for pearlescent look
+    const shimmerGrad = laserCtx.createLinearGradient(tailX, tailY, headX, headY);
+    shimmerGrad.addColorStop(0,    `hsla(${rh1},100%,78%,0)`);
+    shimmerGrad.addColorStop(0.3,  `hsla(${rh2},100%,83%,${0.55 * lifeAlpha})`);
+    shimmerGrad.addColorStop(0.65, `hsla(${rh3},100%,87%,${0.72 * lifeAlpha})`);
+    shimmerGrad.addColorStop(1,    `hsla(${(rh+20)%360},100%,92%,${0.96 * lifeAlpha})`);
+
     laserCtx.save();
-    laserCtx.strokeStyle = `rgba(255,255,255,${0.95 * lifeAlpha})`;
-    laserCtx.lineWidth = l.thickness * 0.7;
+    laserCtx.strokeStyle = shimmerGrad;
+    laserCtx.lineWidth = l.thickness * 1.8;
+    laserCtx.lineCap = 'round';
+    laserCtx.beginPath();
+    laserCtx.moveTo(tailX, tailY);
+    laserCtx.lineTo(headX, headY);
+    laserCtx.stroke();
+    laserCtx.restore();
+
+    // Layer 3: white core for glossy sharpness
+    laserCtx.save();
+    laserCtx.strokeStyle = `rgba(255,255,255,${0.92 * lifeAlpha})`;
+    laserCtx.lineWidth = l.thickness * 0.5;
     laserCtx.lineCap = 'round';
     laserCtx.beginPath();
     laserCtx.moveTo(tailX, tailY);
@@ -1335,13 +1376,16 @@ function drawLasers() {
     if (l.progress >= 1 && l.life > l.maxLife - 20) {
       const flashAlpha = (l.life - (l.maxLife - 20)) / 20;
       laserCtx.save();
-      const flashGrad = laserCtx.createRadialGradient(headX, headY, 0, headX, headY, 25);
-      flashGrad.addColorStop(0, `rgba(255,255,255,${0.9 * flashAlpha})`);
-      flashGrad.addColorStop(0.4, `rgba(${l.color.glow},${0.5 * flashAlpha})`);
-      flashGrad.addColorStop(1, `rgba(${l.color.glow},0)`);
+      const flashGrad = laserCtx.createRadialGradient(headX, headY, 0, headX, headY, 30);
+      flashGrad.addColorStop(0,   `rgba(255,255,255,${0.95 * flashAlpha})`);
+      flashGrad.addColorStop(0.25, `hsla(${rh},100%,80%,${0.75 * flashAlpha})`);
+      flashGrad.addColorStop(0.55, `hsla(${rh1},100%,68%,${0.4 * flashAlpha})`);
+      flashGrad.addColorStop(1,    `hsla(${rh2},100%,60%,0)`);
+      laserCtx.shadowColor = `hsla(${rh},100%,72%,${flashAlpha})`;
+      laserCtx.shadowBlur = 22;
       laserCtx.fillStyle = flashGrad;
       laserCtx.beginPath();
-      laserCtx.arc(headX, headY, 25, 0, Math.PI * 2);
+      laserCtx.arc(headX, headY, 30, 0, Math.PI * 2);
       laserCtx.fill();
       laserCtx.restore();
     }
@@ -1588,6 +1632,8 @@ nameInputEl.addEventListener('keydown', (e) => {
     beginMainExperience();
   }
 });
+
+setTimeout(() => { if (nameInputEl) nameInputEl.focus(); }, 120);
 </script>
 </body>
 </html>
