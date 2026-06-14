@@ -1441,35 +1441,54 @@ function drawLasers() {
       laserCtx.fill();
       laserCtx.restore();
 
-      // ♥ at the very tip
-      const heartSize = Math.max(9, arrowSize * 0.88);
+      // ♡ at the very tip — large, glowing heart
+      const heartSize = Math.max(28, arrowSize * 2.2);
+      const heartX = tipX + Math.cos(arrowAngle) * heartSize * 0.5;
+      const heartY = tipY + Math.sin(arrowAngle) * heartSize * 0.5;
+      // outer glow pass
       laserCtx.save();
-      laserCtx.font = `${heartSize}px sans-serif`;
+      laserCtx.font = `bold ${heartSize}px sans-serif`;
       laserCtx.textAlign = 'center';
       laserCtx.textBaseline = 'middle';
-      laserCtx.fillStyle = `rgba(255, 210, 225, ${0.96 * lifeAlpha})`;
-      laserCtx.shadowColor = `rgba(255, 120, 160, ${0.88 * lifeAlpha})`;
-      laserCtx.shadowBlur = 13;
-      laserCtx.fillText('♥',
-        tipX + Math.cos(arrowAngle) * heartSize * 0.56,
-        tipY + Math.sin(arrowAngle) * heartSize * 0.56
-      );
+      laserCtx.shadowColor = `rgba(255, 80, 140, ${lifeAlpha})`;
+      laserCtx.shadowBlur = 32;
+      laserCtx.fillStyle = `rgba(255, 80, 140, ${0.55 * lifeAlpha})`;
+      laserCtx.fillText('♡', heartX, heartY);
+      laserCtx.restore();
+      // bright core pass
+      laserCtx.save();
+      laserCtx.font = `bold ${heartSize}px sans-serif`;
+      laserCtx.textAlign = 'center';
+      laserCtx.textBaseline = 'middle';
+      laserCtx.shadowColor = `rgba(255, 200, 220, ${lifeAlpha})`;
+      laserCtx.shadowBlur = 18;
+      laserCtx.fillStyle = `rgba(255, 230, 240, ${0.98 * lifeAlpha})`;
+      laserCtx.fillText('♡', heartX, heartY);
       laserCtx.restore();
     }
 
     if (l.progress >= 1 && l.life > l.maxLife - 20) {
       const flashAlpha = (l.life - (l.maxLife - 20)) / 20;
       if (l.isArrow) {
-        // ♥ bloom at impact
-        const bloomSize = Math.max(16, l.thickness * 7 + 12) * (1 + (1 - flashAlpha) * 0.6);
+        // ♡ bloom at impact
+        const bloomSize = Math.max(40, l.thickness * 12 + 20) * (1 + (1 - flashAlpha) * 1.2);
         laserCtx.save();
-        laserCtx.font = `${bloomSize}px sans-serif`;
+        laserCtx.font = `bold ${bloomSize}px sans-serif`;
         laserCtx.textAlign = 'center';
         laserCtx.textBaseline = 'middle';
-        laserCtx.fillStyle = `rgba(255, 190, 210, ${flashAlpha})`;
-        laserCtx.shadowColor = `hsla(${rh},100%,72%,${flashAlpha})`;
-        laserCtx.shadowBlur = 24;
-        laserCtx.fillText('♥', headX, headY);
+        laserCtx.shadowColor = `rgba(255, 80, 140, ${flashAlpha})`;
+        laserCtx.shadowBlur = 40;
+        laserCtx.fillStyle = `rgba(255, 80, 140, ${0.6 * flashAlpha})`;
+        laserCtx.fillText('♡', headX, headY);
+        laserCtx.restore();
+        laserCtx.save();
+        laserCtx.font = `bold ${bloomSize}px sans-serif`;
+        laserCtx.textAlign = 'center';
+        laserCtx.textBaseline = 'middle';
+        laserCtx.shadowColor = `rgba(255, 220, 235, ${flashAlpha})`;
+        laserCtx.shadowBlur = 20;
+        laserCtx.fillStyle = `rgba(255, 240, 248, ${flashAlpha})`;
+        laserCtx.fillText('♡', headX, headY);
         laserCtx.restore();
       } else {
         laserCtx.save();
