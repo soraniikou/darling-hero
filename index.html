@@ -559,7 +559,8 @@ const PHASES = {
     burstSpeed: [0.3, 0.7],
     burstGravity: 0.05,
     burstUpward: false,
-    glowColor: '#6080d0'
+    glowColor: '#6080d0',
+    swayFall: true
   },
   yorokobi: {
     name: 'Joy',
@@ -649,6 +650,25 @@ const PHASES = {
     burstCircular: true,
     glowColor: '#ff90b0'
   },
+  sabishii: {
+    name: 'Loneliness',
+    laserColors: [
+      { core: '160,140,225', glow: '100,80,185' },
+      { core: '200,190,242', glow: '140,120,212' },
+      { core: '120,100,200', glow: '70,50,155' },
+      { core: '218,210,250', glow: '168,158,232' }
+    ],
+    glowGradient: 'radial-gradient(circle, rgba(160,140,220,0.42) 0%, rgba(100,80,180,0.24) 30%, rgba(50,30,100,0.1) 60%, transparent 80%)',
+    laserSpeedRange: [0.010, 0.020],
+    laserDuration: 7000,
+    laserCount: 24,
+    burstSpeed: [0.15, 0.45],
+    burstGravity: 0.03,
+    burstUpward: false,
+    glowColor: '#a090d8',
+    swayFall: true,
+    swaySlower: true
+  },
   shizu: {
     name: 'Stillness',
     laserColors: [
@@ -676,7 +696,8 @@ const HERO_LINE_BY_PHASE = {
   tsukare: (u) => `${u}, you don't have to be perfect`,
   nozomi: (u) => `${u}, you don't have to give up`,
   ai_love: (u) => `${u}, I love you just as you are`,
-  shizu: (u) => `${u}, whoever you become, I'll still love that you`
+  shizu: (u) => `${u}, whoever you become, I'll still love that you`,
+  sabishii: (u) => `${u}, I'm right here beside you`
 };
 
 const FAREWELL_MESSAGE = 'See you again';
@@ -827,7 +848,7 @@ function beginMainExperience() {
 // ============================================================
 // AI判定システム
 // ============================================================
-const VALID_PHASE_KEYS = ['ikari', 'ai', 'yorokobi', 'shaa', 'tsukare', 'nozomi', 'ai_love', 'shizu'];
+const VALID_PHASE_KEYS = ['ikari', 'ai', 'yorokobi', 'shaa', 'tsukare', 'nozomi', 'ai_love', 'shizu', 'sabishii'];
 
 /** API が英語名・別表記で返す場合の正規化（8相キーへ） */
 const PHASE_ALIAS_TO_KEY = {
@@ -856,7 +877,14 @@ const PHASE_ALIAS_TO_KEY = {
   stillness: 'shizu',
   calm: 'shizu',
   quiet: 'shizu',
-  peace: 'shizu'
+  peace: 'shizu',
+  sabishii: 'sabishii',
+  '淋しい': 'sabishii',
+  '寂しい': 'sabishii',
+  'さみしい': 'sabishii',
+  'さびしい': 'sabishii',
+  lonely: 'sabishii',
+  loneliness: 'sabishii'
 };
 
 function normalizePhaseKey(raw) {
@@ -1199,7 +1227,12 @@ function loop() {
     return true;
   });
   burstCharSpans.forEach(b => {
-    if (b.circular) {
+    if (b.swayFall) {
+      b.swayTime++;
+      b.x = b.baseX + b.swayAmp * Math.sin(b.swayTime * b.swayFreq + b.swayPhase);
+      b.y += b.vy;
+      b.vy += b.gravity;
+    } else if (b.circular) {
       b.angle += b.angleSpeed;
       b.radius += b.radiusSpeed;
       b.x = b.cx + Math.cos(b.angle) * b.radius;
@@ -1404,6 +1437,47 @@ function spawnHeroBurst(text, phase) {
   const screenCx = window.innerWidth / 2;
   const screenCy = window.innerHeight / 2;
   const chars = Array.from(text);
+
+  if (phase.swayFall) {
+    const screenW = window.innerWidth;
+    const slower = !!phase.swaySlower;
+    chars.forEach((char, idx) => {
+      if (char.trim() === '') return;
+      const bx = screenCx + (Math.random() - 0.5) * screenW * 0.65;
+      const by = screenCy * 0.28 + Math.random() * screenCy * 0.38;
+      const span = document.createElement('span');
+      span.className = 'burst-char';
+      span.textContent = char;
+      span.style.left = bx + 'px';
+      span.style.top = by + 'px';
+      span.style.transform = 'translate(-50%, -50%)';
+      const colorIdx = idx % phase.laserColors.length;
+      const c = phase.laserColors[colorIdx];
+      const colorStr = `rgb(${c.core})`;
+      span.style.color = colorStr;
+      span.style.textShadow = `0 0 20px ${colorStr}, 0 0 40px ${colorStr}`;
+      overlay.appendChild(span);
+      const maxLife = slower ? 1900 + Math.random() * 1100 : 1300 + Math.random() * 700;
+      burstCharSpans.push({
+        el: span,
+        x: bx, y: by,
+        baseX: bx,
+        swayFall: true,
+        swayTime: Math.random() * 200,
+        swayAmp:  slower ? 24 + Math.random() * 32  : 38 + Math.random() * 52,
+        swayFreq: slower ? 0.009 + Math.random() * 0.010 : 0.015 + Math.random() * 0.018,
+        swayPhase: Math.random() * Math.PI * 2,
+        vy:      slower ? 0.10 + Math.random() * 0.18 : 0.28 + Math.random() * 0.65,
+        gravity: slower ? 0.0015 + Math.random() * 0.0025 : 0.005 + Math.random() * 0.009,
+        rot:  (Math.random() - 0.5) * (slower ? 10 : 18),
+        vRot: (Math.random() - 0.5) * (slower ? 0.18 : 0.35),
+        life: maxLife,
+        maxLife: maxLife
+      });
+    });
+    return;
+  }
+
   const [minSpeed, maxSpeed] = phase.burstSpeed;
 
   chars.forEach((char, idx) => {
@@ -1538,8 +1612,8 @@ async function release() {
   phaseNameEl.style.color = phase.glowColor;
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
-  // レーザー発射
-  startLaserBurst(phase);
+  // レーザー発射（寂しい以外）
+  if (!phase.swayFall) startLaserBurst(phase);
 
   // 文字飛散
   setTimeout(() => {
