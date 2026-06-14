@@ -121,9 +121,9 @@
   }
   .begin-btn {
     margin-top: 8px;
-    padding: 12px 36px;
+    padding: 10px 29px;
     font-family: 'Pinyon Script', 'Great Vibes', cursive;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 400;
     color: #1a1a2a;
     border: none;
@@ -131,11 +131,18 @@
     background: linear-gradient(135deg, #ffd86b 0%, #ff8fa3 50%, #7ee8fa 100%);
     box-shadow: 0 0 24px rgba(255, 216, 107, 0.35);
     transition: transform 0.3s, filter 0.3s, opacity 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
   }
   .begin-btn .begin-note {
-    margin-left: 0.2em;
     font-size: 1.05em;
     font-weight: 400;
+  }
+  .begin-btn .begin-mic {
+    font-family: sans-serif;
+    font-size: 0.9em;
+    line-height: 1;
   }
   .begin-btn:hover {
     transform: scale(1.04);
@@ -482,7 +489,7 @@
     <h1 class="welcome-title">Darling Hero</h1>
     <p class="welcome-prompt">What should I call you?</p>
     <input type="text" id="nameInput" class="name-input" placeholder="your name…" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off">
-    <button type="button" class="begin-btn" id="beginBtn">Begin <span class="begin-note" aria-hidden="true">♪</span></button>
+    <button type="button" class="begin-btn" id="beginBtn"><span class="begin-note" aria-hidden="true">♪</span> Begin <span class="begin-mic" aria-hidden="true">🎤</span></button>
   </div>
 </div>
 
