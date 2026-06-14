@@ -1618,7 +1618,7 @@ async function release() {
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
-    spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    if (!phase.swayFall) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
 
