@@ -1059,6 +1059,9 @@ let heroSparkles = [];
 let burstCharSpans = [];
 let heroBrightness = 0;
 
+// ── Sorrow 小鳥 ──
+let sorrowBirds = [];
+
 /** 0=通常△背景、1=ミラーボール魔法（名前付き行〜入力復帰まで） */
 let mirrorBallBlend = 0;
 let mirrorBallEaseIn = false;
@@ -1291,6 +1294,35 @@ function loop() {
   heroBrightness *= 0.995;
 }
 loop();
+
+// ============================================================
+// Sorrow 小鳥システム（sorrow フェーズ専用・他の感情に影響しない）
+// ============================================================
+function spawnSorrowBirds() {
+  sorrowBirds = [];
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  for (let i = 0; i < 10; i++) {
+    sorrowBirds.push({
+      x:           cx + (Math.random() - 0.5) * window.innerWidth  * 0.6,
+      y:           cy + (Math.random() - 0.5) * window.innerHeight * 0.5,
+      vx:          (Math.random() - 0.5) * 1.2,
+      vy:          -0.3 - Math.random() * 0.5,
+      wingPhase:   Math.random() * Math.PI * 2,
+      wingSpeed:   0.13 + Math.random() * 0.09,
+      orbitAngle:  Math.random() * Math.PI * 2,
+      orbitSpeed:  (0.007 + Math.random() * 0.007) * (Math.random() < 0.5 ? 1 : -1),
+      orbitRadius: 28 + Math.random() * 48,
+      size:        7 + Math.random() * 5,
+      alpha:       0,
+      fadeOut:     false
+    });
+  }
+}
+
+function fadeSorrowBirds() {
+  sorrowBirds.forEach(b => { b.fadeOut = true; });
+}
 
 // ============================================================
 // レーザーシステム
@@ -1526,6 +1558,59 @@ function drawLasers() {
     }
   });
 
+  // ── Sorrow 小鳥の更新・描画（sorrow 以外では sorrowBirds が空なので何もしない）──
+  if (sorrowBirds.length > 0) {
+    const sorrowTargets = burstCharSpans.filter(b => b.swayFall && b.life > 0);
+    sorrowBirds.forEach((b, i) => {
+      b.alpha = b.fadeOut
+        ? Math.max(0, b.alpha - 0.010)
+        : Math.min(0.82, b.alpha + 0.018);
+
+      if (sorrowTargets.length > 0) {
+        const target = sorrowTargets[i % sorrowTargets.length];
+        b.orbitAngle += b.orbitSpeed;
+        const goalX = target.x + Math.cos(b.orbitAngle) * b.orbitRadius;
+        const goalY = target.y + Math.sin(b.orbitAngle) * b.orbitRadius * 0.55;
+        b.vx += (goalX - b.x) * 0.025;
+        b.vy += (goalY - b.y) * 0.025;
+      }
+      b.vx *= 0.86;
+      b.vy *= 0.86;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.wingPhase += b.wingSpeed;
+
+      if (b.alpha <= 0) return;
+
+      const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+      const angle = spd > 0.05 ? Math.atan2(b.vy, b.vx) : 0;
+      const wingDrop = Math.sin(b.wingPhase) * b.size * 0.55;
+
+      laserCtx.save();
+      laserCtx.translate(b.x, b.y);
+      laserCtx.rotate(angle);
+      laserCtx.globalAlpha = b.alpha;
+      laserCtx.shadowColor = 'rgba(120, 190, 255, 0.9)';
+      laserCtx.shadowBlur  = 10;
+      laserCtx.strokeStyle = `rgba(160, 210, 255, ${b.alpha})`;
+      laserCtx.lineWidth   = 1.6;
+      laserCtx.lineCap     = 'round';
+      // 左翼
+      laserCtx.beginPath();
+      laserCtx.moveTo(0, 0);
+      laserCtx.quadraticCurveTo(-b.size * 0.45, -wingDrop, -b.size, wingDrop * 0.25);
+      laserCtx.stroke();
+      // 右翼
+      laserCtx.beginPath();
+      laserCtx.moveTo(0, 0);
+      laserCtx.quadraticCurveTo( b.size * 0.45, -wingDrop,  b.size, wingDrop * 0.25);
+      laserCtx.stroke();
+      laserCtx.restore();
+    });
+    // フェードアウト完了した鳥を除去
+    sorrowBirds = sorrowBirds.filter(b => !(b.fadeOut && b.alpha <= 0));
+  }
+
   requestAnimationFrame(drawLasers);
 }
 drawLasers();
@@ -1541,6 +1626,7 @@ function spawnHeroBurst(text, phase) {
   const chars = Array.from(text);
 
   if (phase.swayFall) {
+    if (phase.name === 'Sorrow') spawnSorrowBirds();
     const screenW = window.innerWidth;
     const slower = !!phase.swaySlower;
     chars.forEach((char, idx) => {
@@ -1742,6 +1828,7 @@ async function release() {
 
   // フェードアウト
   setTimeout(() => {
+    fadeSorrowBirds();
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
     clearHeroLineTimers();
@@ -1784,6 +1871,7 @@ async function release() {
     document.getElementById('titleWrap').classList.remove('is-hidden');
     cachedJudgment = null;
     cachedText = '';
+    sorrowBirds = [];
   }, inputReadyAt);
 }
 
