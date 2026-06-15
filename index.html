@@ -1594,27 +1594,53 @@ function drawLasers() {
       const dy = b.y - b.prevY;
       const spd = Math.sqrt(dx * dx + dy * dy);
       const angle = spd > 0.01 ? Math.atan2(dy, dx) : 0;
-      const wingDrop = Math.sin(b.wingPhase) * b.size * 0.55;
+      // 羽ばたき量（2倍）
+      const wingDrop = Math.sin(b.wingPhase) * b.size * 1.1;
+      const W = b.size * 2;   // 翼端の幅（2倍）
 
       laserCtx.save();
       laserCtx.translate(b.x, b.y);
       laserCtx.rotate(angle);
       laserCtx.globalAlpha = b.alpha;
       laserCtx.shadowColor = 'rgba(120, 190, 255, 0.9)';
-      laserCtx.shadowBlur  = 10;
+      laserCtx.shadowBlur  = 14;
       laserCtx.strokeStyle = `rgba(160, 210, 255, ${b.alpha})`;
-      laserCtx.lineWidth   = 1.6;
+      laserCtx.lineWidth   = 2.2;
       laserCtx.lineCap     = 'round';
-      // 左翼
+      laserCtx.lineJoin    = 'round';
+
+      // 左翼：3点ベジェで翼の丸みを強調
       laserCtx.beginPath();
       laserCtx.moveTo(0, 0);
-      laserCtx.quadraticCurveTo(-b.size * 0.45, -wingDrop, -b.size, wingDrop * 0.25);
+      laserCtx.bezierCurveTo(
+        -W * 0.35, -wingDrop * 1.1,
+        -W * 0.75, -wingDrop * 0.5,
+        -W,         wingDrop * 0.3
+      );
       laserCtx.stroke();
+
       // 右翼
       laserCtx.beginPath();
       laserCtx.moveTo(0, 0);
-      laserCtx.quadraticCurveTo( b.size * 0.45, -wingDrop,  b.size, wingDrop * 0.25);
+      laserCtx.bezierCurveTo(
+         W * 0.35, -wingDrop * 1.1,
+         W * 0.75, -wingDrop * 0.5,
+         W,         wingDrop * 0.3
+      );
       laserCtx.stroke();
+
+      // 胴体（小さな楕円）
+      laserCtx.beginPath();
+      laserCtx.ellipse(0, 0, b.size * 0.28, b.size * 0.18, 0, 0, Math.PI * 2);
+      laserCtx.fillStyle = `rgba(200, 230, 255, ${b.alpha * 0.7})`;
+      laserCtx.fill();
+
+      // 尾羽（短い線）
+      laserCtx.beginPath();
+      laserCtx.moveTo(-b.size * 0.18, 0);
+      laserCtx.lineTo(-b.size * 0.55, b.size * 0.22);
+      laserCtx.stroke();
+
       laserCtx.restore();
     });
     // フェードアウト完了した鳥を除去
