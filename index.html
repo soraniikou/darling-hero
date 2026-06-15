@@ -430,6 +430,11 @@
   .hero-line .hero-line-word.is-visible {
     opacity: 1;
   }
+  .hero-line .hero-line-word--name {
+    font-family: 'Great Vibes', cursive;
+    font-size: 0.8em;
+    vertical-align: baseline;
+  }
 
   /* ラストメッセージ — スマホ既定 2×、PC は下の media */
   .hero-farewell {
@@ -754,12 +759,14 @@ function clearHeroLineTimers() {
   heroLineTimeouts = [];
 }
 
-function appendHeroLineWordChunks(parent, text, wordSpans) {
+function appendHeroLineWordChunks(parent, text, wordSpans, isName = false) {
   const chunks = text.match(/\S+|\s+/g) || [];
   chunks.forEach(chunk => {
     if (/^\s+$/.test(chunk)) return;
     const span = document.createElement('span');
-    span.className = 'hero-line-word';
+    span.className = isName
+      ? 'hero-line-word hero-line-word--name'
+      : 'hero-line-word';
     span.textContent = chunk;
     parent.appendChild(span);
     wordSpans.push(span);
@@ -773,6 +780,8 @@ function startHeroLineWordReveal(el, fullText) {
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
   const commaIdx = fullText.indexOf(', ');
   const wordSpans = [];
+  const namePart = commaIdx !== -1 ? fullText.slice(0, commaIdx + 1) : '';
+  const restPart = commaIdx !== -1 ? fullText.slice(commaIdx + 2) : fullText;
 
   if (isMobile && commaIdx !== -1) {
     el.classList.add('hero-line--stacked');
@@ -782,11 +791,12 @@ function startHeroLineWordReveal(el, fullText) {
     row2.className = 'hero-line-row';
     el.appendChild(row1);
     el.appendChild(row2);
-    appendHeroLineWordChunks(row1, fullText.slice(0, commaIdx + 1), wordSpans);
-    appendHeroLineWordChunks(row2, fullText.slice(commaIdx + 2), wordSpans);
+    appendHeroLineWordChunks(row1, namePart, wordSpans, true);
+    appendHeroLineWordChunks(row2, restPart, wordSpans, false);
   } else {
     el.classList.remove('hero-line--stacked');
-    appendHeroLineWordChunks(el, fullText, wordSpans);
+    appendHeroLineWordChunks(el, namePart, wordSpans, true);
+    appendHeroLineWordChunks(el, restPart, wordSpans, false);
   }
 
   el.classList.add('show');
