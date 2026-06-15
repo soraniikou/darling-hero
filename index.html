@@ -1594,9 +1594,9 @@ function drawLasers() {
       const dy = b.y - b.prevY;
       const spd = Math.sqrt(dx * dx + dy * dy);
       const angle = spd > 0.01 ? Math.atan2(dy, dx) : 0;
-      // 羽ばたき量（2倍）
-      const wingDrop = Math.sin(b.wingPhase) * b.size * 1.1;
-      const W = b.size * 2;   // 翼端の幅（2倍）
+      // 羽ばたき量・翼幅（0.6倍に短縮）
+      const wingDrop = Math.sin(b.wingPhase) * b.size * 0.9;
+      const W = b.size * 1.2;   // 2.0 × 0.6 = 1.2
 
       laserCtx.save();
       laserCtx.translate(b.x, b.y);
@@ -1609,24 +1609,16 @@ function drawLasers() {
       laserCtx.lineCap     = 'round';
       laserCtx.lineJoin    = 'round';
 
-      // 左翼：3点ベジェで翼の丸みを強調
+      // 左翼（平面・直線）
       laserCtx.beginPath();
       laserCtx.moveTo(0, 0);
-      laserCtx.bezierCurveTo(
-        -W * 0.35, -wingDrop * 1.1,
-        -W * 0.75, -wingDrop * 0.5,
-        -W,         wingDrop * 0.3
-      );
+      laserCtx.lineTo(-W, -wingDrop);
       laserCtx.stroke();
 
-      // 右翼
+      // 右翼（平面・直線）
       laserCtx.beginPath();
       laserCtx.moveTo(0, 0);
-      laserCtx.bezierCurveTo(
-         W * 0.35, -wingDrop * 1.1,
-         W * 0.75, -wingDrop * 0.5,
-         W,         wingDrop * 0.3
-      );
+      laserCtx.lineTo(W, -wingDrop);
       laserCtx.stroke();
 
       // 胴体（小さな楕円）
