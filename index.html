@@ -1324,7 +1324,8 @@ function spawnSorrowBirds() {
       wingSpeed:    0.09 + Math.random() * 0.05,
       size:         11 + Math.random() * 5,
       alpha:        0,
-      fadeOut:      false
+      fadeOut:      false,
+      wingGrow:     0 
     });
   }
 }
@@ -1588,6 +1589,7 @@ function drawLasers() {
       b.y = b.cy + Math.sin(b.spiralAngle) * b.spiralRadius * 0.48;
 
       b.wingPhase += b.wingSpeed;
+            b.wingGrow = Math.min(1, b.wingGrow + 0.012);
 
       if (b.alpha <= 0) return;
 
