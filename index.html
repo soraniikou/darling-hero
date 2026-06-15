@@ -351,11 +351,11 @@
     position: fixed;
     top: 24px;
     right: 28px;
-    font-family: 'Pinyon Script', 'Great Vibes', cursive;
-    font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+    font-family: 'Zen Kurenaido', 'Noto Serif JP', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
     font-weight: 400;
     color: rgba(255, 255, 255, 0.85);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     opacity: 0;
     transition: opacity 1.4s ease, transform 1.4s ease;
     transform: translateY(-10px);
@@ -366,6 +366,11 @@
   .phase-name.show {
     opacity: 0.92;
     transform: translateY(0);
+  }
+  .phase-name--sorrow {
+    top: auto;
+    bottom: 32px;
+    right: 28px;
   }
 
   /* 最後の一行：Hero Line（筆記体・単語間）— スマホ既定 2×、PC は下の media */
@@ -1694,6 +1699,7 @@ async function release() {
   const phaseNameEl = document.getElementById('phaseName');
   phaseNameEl.textContent = phase.name;
   phaseNameEl.style.color = phase.glowColor;
+  phaseNameEl.classList.toggle('phase-name--sorrow', phase.name === 'Sorrow');
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
   // レーザー発射（寂しい以外）
