@@ -1305,13 +1305,18 @@ function loop() {
 loop();
 
 // ============================================================
-// Sorrow 小鳥システム（sorrow フェーズ専用・他の感情に影響しない）
+// 小鳥システム（Sorrow / Weariness 専用・他の感情に影響しない）
 // ============================================================
-function spawnSorrowBirds() {
+// colors: { stroke, shadow, fill }
+function spawnSorrowBirds(colors) {
   sorrowBirds = [];
+  const c = colors || {
+    stroke: '160, 210, 255',   // Sorrow: 青白
+    shadow: '120, 190, 255',
+    fill:   '200, 230, 255'
+  };
   const cx = window.innerWidth / 2;
   const topY = window.innerHeight * 0.28 + Math.random() * window.innerHeight * 0.12;
-  // 2羽：1羽は時計回り、もう1羽は反時計回りで螺旋落下
   for (let i = 0; i < 2; i++) {
     const startX = cx + (i === 0 ? -70 : 70) + (Math.random() - 0.5) * 40;
     sorrowBirds.push({
@@ -1321,7 +1326,6 @@ function spawnSorrowBirds() {
       y:            topY,
       prevX:        startX,
       prevY:        topY,
-      // 落下速度＝文字の約半分（文字 vy: 0.28〜0.93 の平均 ~0.5、その1/2）
       vy:           0.13 + Math.random() * 0.10,
       gravity:      0.0022 + Math.random() * 0.0018,
       spiralAngle:  Math.random() * Math.PI * 2,
@@ -1332,7 +1336,10 @@ function spawnSorrowBirds() {
       size:         11 + Math.random() * 5,
       alpha:        0,
       fadeOut:      false,
-      wingGrow:     0 
+      wingGrow:     0,
+      strokeColor:  c.stroke,
+      shadowColor:  c.shadow,
+      fillColor:    c.fill
     });
   }
 }
@@ -1613,9 +1620,9 @@ function drawLasers() {
       laserCtx.translate(b.x, b.y);
       laserCtx.rotate(angle);
       laserCtx.globalAlpha = b.alpha;
-      laserCtx.shadowColor = 'rgba(120, 190, 255, 0.9)';
+      laserCtx.shadowColor = `rgba(${b.shadowColor}, 0.9)`;
       laserCtx.shadowBlur  = 14;
-      laserCtx.strokeStyle = `rgba(160, 210, 255, ${b.alpha})`;
+      laserCtx.strokeStyle = `rgba(${b.strokeColor}, ${b.alpha})`;
       laserCtx.lineWidth   = 2.2;
       laserCtx.lineCap     = 'round';
       laserCtx.lineJoin    = 'round';
@@ -1635,7 +1642,7 @@ function drawLasers() {
       // 胴体（小さな楕円）
       laserCtx.beginPath();
       laserCtx.ellipse(0, 0, b.size * 0.28, b.size * 0.18, 0, 0, Math.PI * 2);
-      laserCtx.fillStyle = `rgba(200, 230, 255, ${b.alpha * 0.7})`;
+      laserCtx.fillStyle = `rgba(${b.fillColor}, ${b.alpha * 0.7})`;
       laserCtx.fill();
 
       // 尾羽（短い線）
@@ -1666,6 +1673,11 @@ function spawnHeroBurst(text, phase) {
 
   if (phase.swayFall) {
     if (phase.name === 'Sorrow') spawnSorrowBirds();
+    if (phase.name === 'Weariness') spawnSorrowBirds({
+      stroke: '90, 170, 100',   // 暗めの緑
+      shadow: '60, 140, 70',
+      fill:   '130, 200, 140'
+    });
     const screenW = window.innerWidth;
     const slower = !!phase.swaySlower;
     chars.forEach((char, idx) => {
