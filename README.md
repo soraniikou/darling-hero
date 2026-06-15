@@ -3,9 +3,12 @@
 
 <!-- びっくりマーク！画像2 release -->
 <img src="release.png" width="100%" alt="release">
+<!-- びっくりマーク！画像3 sad2 -->
+<img src="sad2.png" width="100%" alt="sad2">
 
 <!-- びっくりマーク！スクショ 6月14日 -->
 <img src="スクリーンショット%202026-06-14%20225258.png" width="100%" alt="screenshot">
+
 
 ♪アプリ体験　♫
 https://darling-hero.vercel.app
