@@ -1163,7 +1163,7 @@ function loop() {
   mirrorBallPhase += 0.014;
 
   const mb = mirrorBallBlend;
-  const trailA = 0.18 * (1 - mb * 0.9);
+  const trailA = Math.max(0.15, 0.18 * (1 - mb * 0.9));
   ctx.fillStyle = `rgba(8,6,16,${trailA})`;
   ctx.fillRect(0, 0, W, H);
 
