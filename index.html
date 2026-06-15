@@ -443,6 +443,15 @@
     color: rgba(120, 175, 255, 0.82);
     text-shadow: 0 0 16px rgba(80, 140, 255, 0.6), 0 0 32px rgba(60, 100, 220, 0.28);
   }
+  /* Love 専用：濃いピンク */
+  .hero-line--pink .hero-line-word {
+    color: rgba(220, 60, 120, 0.95);
+    text-shadow: 0 0 22px rgba(220, 60, 120, 0.7), 0 0 44px rgba(180, 30, 90, 0.35);
+  }
+  .hero-farewell--pink .farewell-word {
+    color: rgba(220, 60, 120, 0.82);
+    text-shadow: 0 0 16px rgba(220, 60, 120, 0.6), 0 0 32px rgba(180, 30, 90, 0.28);
+  }
 
   /* ラストメッセージ — スマホ既定 2×、PC は下の media */
   .hero-farewell {
@@ -1866,15 +1875,18 @@ async function release() {
   const heroLineText = lineFn(userName);
   const heroLineShowAt = phase.laserDuration + 800;
   const isNavyPhase = phase.name === 'Sorrow' || phase.name === 'Weariness';
+  const isPinkPhase = phase.name === 'Love';
   setTimeout(() => {
     releaseBtn.classList.add('release-btn--hidden-cinematic');
     beginMirrorBallBackgroundTransition();
     heroLineEl.classList.toggle('hero-line--navy', isNavyPhase);
+    heroLineEl.classList.toggle('hero-line--pink', isPinkPhase);
     startHeroLineWordReveal(heroLineEl, heroLineText);
   }, heroLineShowAt);
 
   setTimeout(() => {
     heroFarewellEl.classList.toggle('hero-farewell--navy', isNavyPhase);
+    heroFarewellEl.classList.toggle('hero-farewell--pink', isPinkPhase);
   }, heroLineShowAt + 5000);
 
   setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
@@ -1900,7 +1912,9 @@ async function release() {
       heroLineEl.style.transition = '';
       heroLineEl.classList.remove('hero-line--stacked');
       heroLineEl.classList.remove('hero-line--navy');
+      heroLineEl.classList.remove('hero-line--pink');
       heroFarewellEl.classList.remove('hero-farewell--navy');
+      heroFarewellEl.classList.remove('hero-farewell--pink');
     }, HERO_LINE_EXIT_DURATION_MS);
 
     clearFarewellTimers();
