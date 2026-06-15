@@ -436,6 +436,15 @@
     font-size: 0.768em;
     vertical-align: baseline;
   }
+  /* Sorrow / Weariness 専用：紺色テキスト */
+  .hero-line--navy .hero-line-word {
+    color: rgba(120, 175, 255, 0.95);
+    text-shadow: 0 0 22px rgba(80, 140, 255, 0.7), 0 0 44px rgba(60, 100, 220, 0.35);
+  }
+  .hero-farewell--navy .farewell-word {
+    color: rgba(120, 175, 255, 0.82);
+    text-shadow: 0 0 16px rgba(80, 140, 255, 0.6), 0 0 32px rgba(60, 100, 220, 0.28);
+  }
 
   /* ラストメッセージ — スマホ既定 2×、PC は下の media */
   .hero-farewell {
@@ -531,7 +540,7 @@
 
   <div class="input-row" id="inputRow">
     <div class="input-with-arrow">
-      <textarea id="input" placeholder="write your feeling…" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+      <textarea id="input" placeholder="Write your feeling… / きもちを書いて…" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
       <span class="input-arrow">→</span>
     </div>
     <button class="release-btn" id="releaseBtn" onclick="release()">
@@ -1846,11 +1855,17 @@ async function release() {
   // 最後の一行を表示（演出が落ち着いた頃）
   const heroLineText = lineFn(userName);
   const heroLineShowAt = phase.laserDuration + 800;
+  const isNavyPhase = phase.name === 'Sorrow' || phase.name === 'Weariness';
   setTimeout(() => {
     releaseBtn.classList.add('release-btn--hidden-cinematic');
     beginMirrorBallBackgroundTransition();
+    heroLineEl.classList.toggle('hero-line--navy', isNavyPhase);
     startHeroLineWordReveal(heroLineEl, heroLineText);
   }, heroLineShowAt);
+
+  setTimeout(() => {
+    heroFarewellEl.classList.toggle('hero-farewell--navy', isNavyPhase);
+  }, heroLineShowAt + 5000);
 
   setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
 
@@ -1874,6 +1889,8 @@ async function release() {
       heroLineEl.innerHTML = '';
       heroLineEl.style.transition = '';
       heroLineEl.classList.remove('hero-line--stacked');
+      heroLineEl.classList.remove('hero-line--navy');
+      heroFarewellEl.classList.remove('hero-farewell--navy');
     }, HERO_LINE_EXIT_DURATION_MS);
 
     clearFarewellTimers();
@@ -1898,7 +1915,7 @@ async function release() {
   setTimeout(() => {
     endMirrorBallBackgroundTransition();
     inputEl.disabled = false;
-    inputEl.placeholder = 'write your feeling…';
+    inputEl.placeholder = 'Write your feeling… / きもちを書いて…';
     releaseBtn.disabled = false;
     document.getElementById('titleWrap').classList.remove('is-hidden');
     cachedJudgment = null;
