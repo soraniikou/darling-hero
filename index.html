@@ -434,6 +434,13 @@
   .hero-line .hero-line-word--name {
     vertical-align: baseline;
   }
+  /* Loneliness 専用：2倍サイズ・折り返し許可 */
+  .hero-line--large {
+    font-size: clamp(3.584rem, 8.96vw, 5.632rem);
+    white-space: normal;
+    flex-wrap: wrap;
+    text-align: center;
+  }
   /* Sorrow / Weariness 専用：紺色テキスト */
   .hero-line--navy .hero-line-word {
     color: rgba(120, 175, 255, 0.95);
@@ -442,6 +449,15 @@
   .hero-farewell--navy .farewell-word {
     color: rgba(120, 175, 255, 0.82);
     text-shadow: 0 0 16px rgba(80, 140, 255, 0.6), 0 0 32px rgba(60, 100, 220, 0.28);
+  }
+  /* Weariness 専用：小鳥と同じ緑 */
+  .hero-line--green .hero-line-word {
+    color: rgba(90, 170, 100, 0.95);
+    text-shadow: 0 0 22px rgba(60, 140, 70, 0.7), 0 0 44px rgba(40, 110, 50, 0.35);
+  }
+  .hero-farewell--green .farewell-word {
+    color: rgba(90, 170, 100, 0.82);
+    text-shadow: 0 0 16px rgba(60, 140, 70, 0.6), 0 0 32px rgba(40, 110, 50, 0.28);
   }
   /* Love 専用：濃いピンク */
   .hero-line--pink .hero-line-word {
@@ -707,7 +723,8 @@ const PHASES = {
     burstUpward: false,
     glowColor: '#a090d8',
     swayFall: true,
-    swaySlower: true
+    swaySlower: true,
+    moonScene: true
   },
   shizu: {
     name: 'Stillness',
@@ -1125,7 +1142,8 @@ function drawMirrorSoapBubbles(b) {
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
 
-  mirrorSoapBubbles.forEach(bb => {
+  mirrorSoapBubbles.forEach((bb, idx) => {
+    if (isLonelinessPhase && idx % 2 !== 0) return;
     bb.x += bb.vx;
     bb.y += bb.vy;
     bb.wobble += bb.wobbleSpeed;
@@ -1397,6 +1415,51 @@ function spawnHopePetals() {
 
 function fadeHopePetals() {
   hopePetals.forEach(p => { p.fadeOut = true; });
+}
+
+// ============================================================
+// Loneliness 月システム（sabishii フェーズ専用）
+// ============================================================
+let isLonelinessPhase = false;
+let lonelinessScene = { active: false, alpha: 0, fadeOut: false, moons: [] };
+
+function startLonelinessScene() {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  // 5色の月を斜め方向（左上→右下）に配置
+  const moonColors = [
+    { r: 90,  g: 130, b: 230 }, // 青
+    { r: 170, g: 100, b: 230 }, // 紫
+    { r:  80, g: 200, b: 140 }, // 緑
+    { r: 240, g: 235, b: 155 }, // 淡い黄
+    { r: 240, g: 185, b: 215 }, // 淡いピンク
+  ];
+  lonelinessScene.moons = moonColors.map((col, i) => {
+    const t = i / 4;
+    return {
+      x: W * (0.10 + t * 0.80),
+      y: H * (0.10 + t * 0.75),
+      r: 38,
+      col
+    };
+  });
+  lonelinessScene.active = true;
+  lonelinessScene.alpha = 0;
+  lonelinessScene.fadeOut = false;
+  isLonelinessPhase = true;
+}
+
+function stopLonelinessScene() {
+  lonelinessScene.fadeOut = true;
+  isLonelinessPhase = false;
+}
+
+function resetLonelinessScene() {
+  lonelinessScene.active = false;
+  lonelinessScene.alpha = 0;
+  lonelinessScene.fadeOut = false;
+  lonelinessScene.moons = [];
+  isLonelinessPhase = false;
 }
 
 // ============================================================
@@ -1754,6 +1817,36 @@ function drawLasers() {
     hopePetals = hopePetals.filter(p => !(p.fadeOut && p.alpha <= 0));
   }
 
+  // ── Loneliness の月（sabishii 以外では active=false なので何もしない）──
+  if (lonelinessScene.active) {
+    lonelinessScene.alpha = lonelinessScene.fadeOut
+      ? Math.max(0, lonelinessScene.alpha - 0.005)
+      : Math.min(0.68, lonelinessScene.alpha + 0.007);
+
+    if (lonelinessScene.alpha > 0) {
+      lonelinessScene.moons.forEach(m => {
+        laserCtx.save();
+        laserCtx.globalAlpha = lonelinessScene.alpha;
+        // 外側のぼんやりとした光暈
+        laserCtx.filter = 'blur(14px)';
+        laserCtx.beginPath();
+        laserCtx.arc(m.x, m.y, m.r * 1.6, 0, Math.PI * 2);
+        laserCtx.fillStyle = `rgba(${m.col.r},${m.col.g},${m.col.b},0.35)`;
+        laserCtx.fill();
+        // 月本体（ぼかし小さめ）
+        laserCtx.filter = 'blur(7px)';
+        laserCtx.beginPath();
+        laserCtx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        laserCtx.fillStyle = `rgba(${m.col.r},${m.col.g},${m.col.b},0.88)`;
+        laserCtx.fill();
+        laserCtx.restore();
+      });
+    }
+    if (lonelinessScene.fadeOut && lonelinessScene.alpha <= 0) {
+      lonelinessScene.active = false;
+    }
+  }
+
   requestAnimationFrame(drawLasers);
 }
 drawLasers();
@@ -1963,19 +2056,25 @@ async function release() {
   // 最後の一行を表示（演出が落ち着いた頃）
   const heroLineText = lineFn(userName);
   const heroLineShowAt = phase.laserDuration + 800;
-  const isNavyPhase = phase.name === 'Sorrow' || phase.name === 'Weariness';
-  const isPinkPhase = phase.name === 'Love';
+  const isNavyPhase  = phase.name === 'Sorrow';
+  const isGreenPhase = phase.name === 'Weariness';
+  const isPinkPhase  = phase.name === 'Love';
+  const isLoneliness = phase.name === 'Loneliness';
+  if (isLoneliness) startLonelinessScene();
   setTimeout(() => {
     releaseBtn.classList.add('release-btn--hidden-cinematic');
     beginMirrorBallBackgroundTransition();
-    heroLineEl.classList.toggle('hero-line--navy', isNavyPhase);
-    heroLineEl.classList.toggle('hero-line--pink', isPinkPhase);
+    heroLineEl.classList.toggle('hero-line--navy',  isNavyPhase);
+    heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
+    heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
+    heroLineEl.classList.toggle('hero-line--large', isLoneliness);
     startHeroLineWordReveal(heroLineEl, heroLineText);
   }, heroLineShowAt);
 
   setTimeout(() => {
-    heroFarewellEl.classList.toggle('hero-farewell--navy', isNavyPhase);
-    heroFarewellEl.classList.toggle('hero-farewell--pink', isPinkPhase);
+    heroFarewellEl.classList.toggle('hero-farewell--navy',  isNavyPhase);
+    heroFarewellEl.classList.toggle('hero-farewell--green', isGreenPhase);
+    heroFarewellEl.classList.toggle('hero-farewell--pink',  isPinkPhase);
   }, heroLineShowAt + 5000);
 
   setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
@@ -1988,6 +2087,7 @@ async function release() {
   setTimeout(() => {
     fadeSorrowBirds();
     fadeHopePetals();
+    stopLonelinessScene();
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
     clearHeroLineTimers();
@@ -2002,8 +2102,11 @@ async function release() {
       heroLineEl.style.transition = '';
       heroLineEl.classList.remove('hero-line--stacked');
       heroLineEl.classList.remove('hero-line--navy');
+      heroLineEl.classList.remove('hero-line--green');
       heroLineEl.classList.remove('hero-line--pink');
+      heroLineEl.classList.remove('hero-line--large');
       heroFarewellEl.classList.remove('hero-farewell--navy');
+      heroFarewellEl.classList.remove('hero-farewell--green');
       heroFarewellEl.classList.remove('hero-farewell--pink');
     }, HERO_LINE_EXIT_DURATION_MS);
 
@@ -2036,6 +2139,7 @@ async function release() {
     cachedText = '';
     sorrowBirds = [];
     hopePetals = [];
+    resetLonelinessScene();
   }, inputReadyAt);
 }
 
