@@ -10,7 +10,8 @@
 
 <!-- びっくりマーク！画像1 modokasii -->
 <img src="modokasii.png" width="100%" alt="modokasii">
-
+<!-- びっくりマーク！画像1 kibou -->
+<img src="kibou.png" width="100%" alt="kibou">
 
 <!-- びっくりマーク！スクショ 6月14日 -->
 <img src="スクリーンショット%202026-06-14%20225258.png" width="100%" alt="screenshot">
