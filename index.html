@@ -1373,7 +1373,7 @@ function spawnHopePetals() {
   hopePetals = [];
   const W = window.innerWidth;
   const H = window.innerHeight;
-  for (let i = 0; i < 48; i++) {
+  for (let i = 0; i < 24; i++) {
     const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
     hopePetals.push({
       x:          Math.random() * W,
@@ -1738,10 +1738,16 @@ function drawLasers() {
       laserCtx.globalAlpha = p.alpha;
       laserCtx.shadowColor = `rgba(${p.r}, ${p.g}, ${p.b}, 0.65)`;
       laserCtx.shadowBlur  = 9;
-      laserCtx.scale(1, p.aspect);      // 縦に圧縮して花びら形に
+      laserCtx.fillStyle   = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha})`;
+
+      // 薔薇の花弁形：上部が尖り、中央が膨らみ、基部に小さな切れ込み
+      const s = p.size;
       laserCtx.beginPath();
-      laserCtx.ellipse(0, 0, p.size, p.size, 0, 0, Math.PI * 2);
-      laserCtx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha})`;
+      laserCtx.moveTo(0, -s);                                                        // 先端（上）
+      laserCtx.bezierCurveTo( s * 1.1, -s * 0.3,  s * 0.9,  s * 0.65,  s * 0.15,  s * 0.95); // 右辺
+      laserCtx.quadraticCurveTo(0, s * 0.72, -s * 0.15, s * 0.95);                  // 基部の切れ込み
+      laserCtx.bezierCurveTo(-s * 0.9,  s * 0.65, -s * 1.1, -s * 0.3,  0, -s);     // 左辺
+      laserCtx.closePath();
       laserCtx.fill();
       laserCtx.restore();
     });
