@@ -647,7 +647,8 @@ const PHASES = {
     burstGravity: 0.005,
     burstUpward: false,
     burstCircular: true,
-    glowColor: '#ffb0d0'
+    glowColor: '#ffb0d0',
+    skyScene: true
   },
   tsukare: {
     name: 'Weariness',
@@ -1221,23 +1222,27 @@ function loop() {
   mirrorBallPhase += 0.014;
 
   const mb = mirrorBallBlend;
-  const trailA = Math.max(0.15, 0.18 * (1 - mb * 0.9));
+  const skyMul = gratitudeScene.active ? (1 - gratitudeScene.skyAlpha * 0.92) : 1;
+  const trailA = Math.max(0.15, 0.18 * (1 - mb * 0.9)) * (gratitudeScene.active ? Math.max(0.08, 1 - gratitudeScene.skyAlpha * 0.88) : 1);
   ctx.fillStyle = `rgba(8,6,16,${trailA})`;
   ctx.fillRect(0, 0, W, H);
+
+  updateGratitudeScene();
+  drawGratitudeSky();
 
   const brightnessBoost = Math.min(0.4, heroBrightness);
   const starBoost = 1 + mb * 0.08;
   particles.forEach(p => {
     p.twinkle += 0.02;
     const baseA = p.alpha * (0.5 + 0.5 * Math.sin(p.twinkle));
-    const a = Math.min(1, (baseA + brightnessBoost) * starBoost);
+    const a = Math.min(1, (baseA + brightnessBoost) * starBoost) * skyMul;
     ctx.beginPath();
     ctx.arc(p.x % W, p.y % H, p.r, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,255,255,${a})`;
     ctx.fill();
   });
 
-  const triMul = 1 - mb;
+  const triMul = (1 - mb) * skyMul;
   triMarks.forEach(tr => {
     tr.x += tr.vx; tr.y += tr.vy; tr.rot += tr.vr;
     if (tr.x < -300) tr.x = W + 200;
@@ -1263,7 +1268,12 @@ function loop() {
     ctx.restore();
   });
 
-  drawMirrorSoapBubbles(mb);
+  let bubbleBlend = mb;
+  if (gratitudeScene.active && gratitudeScene.bubbleAlpha > 0.001) {
+    bubbleBlend = Math.max(mb, gratitudeScene.bubbleAlpha * 0.82);
+  }
+  drawMirrorSoapBubbles(bubbleBlend);
+  drawGratitudeContrails();
 
   heroSparkles = heroSparkles.filter(s => s.life > 0);
   heroSparkles.forEach(s => {
@@ -1460,6 +1470,103 @@ function resetLonelinessScene() {
   lonelinessScene.fadeOut = false;
   lonelinessScene.moons = [];
   isLonelinessPhase = false;
+}
+
+// ============================================================
+// Gratitude 青空・飛行機雲システム（shaa フェーズ専用）
+// ============================================================
+let isGratitudePhase = false;
+let gratitudeScene = {
+  active: false,
+  fadeOut: false,
+  bubbleAlpha: 0,
+  skyAlpha: 0,
+  contrails: []
+};
+
+function startGratitudeScene() {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  gratitudeScene.contrails = [];
+  for (let i = 0; i < 5; i++) {
+    gratitudeScene.contrails.push({
+      x: Math.random() * W * 1.3 - W * 0.15,
+      y: H * (0.10 + i * 0.14 + Math.random() * 0.10),
+      len: 160 + Math.random() * 200,
+      thick: 7 + Math.random() * 12,
+      speed: 0.30 + Math.random() * 0.40,
+      alpha: 0.14 + Math.random() * 0.14
+    });
+  }
+  gratitudeScene.active = true;
+  gratitudeScene.fadeOut = false;
+  gratitudeScene.bubbleAlpha = 1;
+  gratitudeScene.skyAlpha = 0;
+  isGratitudePhase = true;
+}
+
+function stopGratitudeScene() {
+  gratitudeScene.fadeOut = true;
+  isGratitudePhase = false;
+}
+
+function resetGratitudeScene() {
+  gratitudeScene.active = false;
+  gratitudeScene.fadeOut = false;
+  gratitudeScene.bubbleAlpha = 0;
+  gratitudeScene.skyAlpha = 0;
+  gratitudeScene.contrails = [];
+  isGratitudePhase = false;
+}
+
+function updateGratitudeScene() {
+  if (!gratitudeScene.active) return;
+  if (gratitudeScene.fadeOut) {
+    gratitudeScene.skyAlpha = Math.max(0, gratitudeScene.skyAlpha - 0.006);
+    gratitudeScene.bubbleAlpha = Math.max(0, gratitudeScene.bubbleAlpha - 0.008);
+    if (gratitudeScene.skyAlpha <= 0 && gratitudeScene.bubbleAlpha <= 0) {
+      gratitudeScene.active = false;
+    }
+    return;
+  }
+  gratitudeScene.bubbleAlpha = Math.max(0, gratitudeScene.bubbleAlpha - 0.0038);
+  gratitudeScene.skyAlpha = Math.min(1, gratitudeScene.skyAlpha + 0.0045);
+}
+
+function drawGratitudeSky() {
+  if (!gratitudeScene.active || gratitudeScene.skyAlpha <= 0.01) return;
+  const a = gratitudeScene.skyAlpha;
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0,    `rgba(90,  165, 245, ${a * 0.92})`);
+  skyGrad.addColorStop(0.45, `rgba(145, 200, 255, ${a * 0.88})`);
+  skyGrad.addColorStop(0.78, `rgba(195, 228, 255, ${a * 0.82})`);
+  skyGrad.addColorStop(1,    `rgba(230, 245, 255, ${a * 0.75})`);
+  ctx.save();
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+function drawGratitudeContrails() {
+  if (!gratitudeScene.active || gratitudeScene.skyAlpha <= 0.05) return;
+  ctx.save();
+  gratitudeScene.contrails.forEach(c => {
+    c.x += c.speed;
+    if (c.x > W + c.len) c.x = -c.len - 60;
+    const a = c.alpha * gratitudeScene.skyAlpha;
+    ctx.globalAlpha = a;
+    ctx.filter = 'blur(10px)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.beginPath();
+    ctx.ellipse(c.x + c.len * 0.5, c.y, c.len * 0.5, c.thick, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.filter = 'blur(5px)';
+    ctx.globalAlpha = a * 0.6;
+    ctx.beginPath();
+    ctx.ellipse(c.x + c.len * 0.35, c.y + c.thick * 0.25, c.len * 0.28, c.thick * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
 }
 
 // ============================================================
@@ -2042,16 +2149,18 @@ async function release() {
   phaseNameEl.classList.toggle('phase-name--sorrow', phase.name === 'Sorrow');
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
-  // レーザー発射（swayFall・petalBurst 以外）
-  if (!phase.swayFall && !phase.petalBurst) startLaserBurst(phase);
+  // レーザー発射（swayFall・petalBurst・skyScene 以外）
+  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene) startLaserBurst(phase);
 
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
     if (phase.petalBurst) spawnHopePetals();
-    if (!phase.swayFall && !phase.petalBurst) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
+
+  if (phase.skyScene) startGratitudeScene();
 
   // 最後の一行を表示（演出が落ち着いた頃）
   const heroLineText = lineFn(userName);
@@ -2060,10 +2169,11 @@ async function release() {
   const isGreenPhase = phase.name === 'Weariness';
   const isPinkPhase  = phase.name === 'Love';
   const isLoneliness = phase.name === 'Loneliness';
+  const isGratitude  = phase.name === 'Gratitude';
   if (isLoneliness) startLonelinessScene();
   setTimeout(() => {
     releaseBtn.classList.add('release-btn--hidden-cinematic');
-    beginMirrorBallBackgroundTransition();
+    if (!isGratitude) beginMirrorBallBackgroundTransition();
     heroLineEl.classList.toggle('hero-line--navy',  isNavyPhase);
     heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
     heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
@@ -2088,6 +2198,7 @@ async function release() {
     fadeSorrowBirds();
     fadeHopePetals();
     stopLonelinessScene();
+    stopGratitudeScene();
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
     clearHeroLineTimers();
@@ -2140,6 +2251,7 @@ async function release() {
     sorrowBirds = [];
     hopePetals = [];
     resetLonelinessScene();
+    resetGratitudeScene();
   }, inputReadyAt);
 }
 
