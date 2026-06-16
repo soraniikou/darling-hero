@@ -52,6 +52,7 @@
   }
   .app.app-visible {
     opacity: 1;
+    pointer-events: auto;
   }
   .app:not(.app-visible) * {
     pointer-events: none !important;
@@ -1340,7 +1341,6 @@ function loop() {
 
   heroBrightness *= 0.995;
 }
-loop();
 
 // ============================================================
 // 小鳥システム（Sorrow / Weariness 専用・他の感情に影響しない）
@@ -1957,6 +1957,7 @@ function drawLasers() {
   requestAnimationFrame(drawLasers);
 }
 drawLasers();
+loop();
 
 // ============================================================
 // 文字飛散
