@@ -667,7 +667,8 @@ const PHASES = {
     burstSpeed: [0.6, 1.4],
     burstGravity: -0.025,
     burstUpward: true,
-    glowColor: '#80e8c0'
+    glowColor: '#80e8c0',
+    petalBurst: true
   },
   ai_love: {
     name: 'Love',
@@ -1358,6 +1359,47 @@ function fadeSorrowBirds() {
 }
 
 // ============================================================
+// Hope 花びらシステム（nozomi フェーズ専用・他の感情に影響しない）
+// ============================================================
+const PETAL_COLORS = [
+  { r: 255, g: 255, b: 255 }, // 白
+  { r: 220, g: 50,  b: 80  }, // 赤
+  { r: 255, g: 160, b: 190 }, // ピンク
+  { r: 140, g: 210, b: 255 }  // 水色
+];
+let hopePetals = [];
+
+function spawnHopePetals() {
+  hopePetals = [];
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  for (let i = 0; i < 48; i++) {
+    const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
+    hopePetals.push({
+      x:          Math.random() * W,
+      y:          Math.random() * H * 1.2,
+      vx:         0,
+      vy:         -(0.35 + Math.random() * 0.55),
+      rot:        Math.random() * Math.PI * 2,
+      vRot:       (Math.random() - 0.5) * 0.05,
+      swayTime:   Math.random() * 200,
+      swayAmp:    0.28 + Math.random() * 0.38,
+      swayFreq:   0.010 + Math.random() * 0.010,
+      size:       5 + Math.random() * 6,
+      aspect:     0.30 + Math.random() * 0.25,
+      r: col.r, g: col.g, b: col.b,
+      alpha:      0,
+      startDelay: Math.floor(Math.random() * 90),
+      fadeOut:    false
+    });
+  }
+}
+
+function fadeHopePetals() {
+  hopePetals.forEach(p => { p.fadeOut = true; });
+}
+
+// ============================================================
 // レーザーシステム
 // ============================================================
 const laserCanvas = document.getElementById('laserCanvas');
@@ -1666,6 +1708,46 @@ function drawLasers() {
     sorrowBirds = sorrowBirds.filter(b => !(b.fadeOut && b.alpha <= 0));
   }
 
+  // ── Hope 花びら（nozomi 以外では hopePetals が空なので何もしない）──
+  if (hopePetals.length > 0) {
+    const CW = laserCanvas.width;
+    const CH = laserCanvas.height;
+    hopePetals.forEach(p => {
+      if (p.startDelay > 0) { p.startDelay--; return; }
+
+      p.alpha = p.fadeOut
+        ? Math.max(0, p.alpha - 0.007)
+        : Math.min(0.88, p.alpha + 0.022);
+
+      p.swayTime++;
+      p.vx = Math.sin(p.swayTime * p.swayFreq) * p.swayAmp;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vRot;
+
+      // 画面外に出たらループ
+      if (p.x < -20)      p.x = CW + 20;
+      if (p.x > CW + 20)  p.x = -20;
+      if (p.y < -20)      p.y = CH + 20;
+
+      if (p.alpha <= 0) return;
+
+      laserCtx.save();
+      laserCtx.translate(p.x, p.y);
+      laserCtx.rotate(p.rot);
+      laserCtx.globalAlpha = p.alpha;
+      laserCtx.shadowColor = `rgba(${p.r}, ${p.g}, ${p.b}, 0.65)`;
+      laserCtx.shadowBlur  = 9;
+      laserCtx.scale(1, p.aspect);      // 縦に圧縮して花びら形に
+      laserCtx.beginPath();
+      laserCtx.ellipse(0, 0, p.size, p.size, 0, 0, Math.PI * 2);
+      laserCtx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha})`;
+      laserCtx.fill();
+      laserCtx.restore();
+    });
+    hopePetals = hopePetals.filter(p => !(p.fadeOut && p.alpha <= 0));
+  }
+
   requestAnimationFrame(drawLasers);
 }
 drawLasers();
@@ -1861,13 +1943,14 @@ async function release() {
   phaseNameEl.classList.toggle('phase-name--sorrow', phase.name === 'Sorrow');
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
-  // レーザー発射（寂しい以外）
-  if (!phase.swayFall) startLaserBurst(phase);
+  // レーザー発射（swayFall・petalBurst 以外）
+  if (!phase.swayFall && !phase.petalBurst) startLaserBurst(phase);
 
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
-    if (!phase.swayFall) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    if (phase.petalBurst) spawnHopePetals();
+    if (!phase.swayFall && !phase.petalBurst) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
 
@@ -1898,6 +1981,7 @@ async function release() {
   // フェードアウト
   setTimeout(() => {
     fadeSorrowBirds();
+    fadeHopePetals();
     spotlightGlow.classList.remove('show');
     phaseNameEl.classList.remove('show');
     clearHeroLineTimers();
@@ -1945,6 +2029,7 @@ async function release() {
     cachedJudgment = null;
     cachedText = '';
     sorrowBirds = [];
+    hopePetals = [];
   }, inputReadyAt);
 }
 
