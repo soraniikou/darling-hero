@@ -469,6 +469,15 @@
     color: rgba(220, 60, 120, 0.82);
     text-shadow: 0 0 16px rgba(220, 60, 120, 0.6), 0 0 32px rgba(180, 30, 90, 0.28);
   }
+  /* Gratitude 専用：濃い青 */
+  .hero-line--dark-blue .hero-line-word {
+    color: rgba(35, 65, 155, 0.96);
+    text-shadow: 0 0 22px rgba(50, 90, 200, 0.65), 0 0 44px rgba(30, 55, 140, 0.35);
+  }
+  .hero-farewell--dark-blue .farewell-word {
+    color: rgba(35, 65, 155, 0.84);
+    text-shadow: 0 0 16px rgba(50, 90, 200, 0.55), 0 0 32px rgba(30, 55, 140, 0.28);
+  }
 
   /* ラストメッセージ — スマホ既定 2×、PC は下の media */
   .hero-farewell {
@@ -1489,12 +1498,16 @@ function startGratitudeScene() {
   const H = window.innerHeight;
   gratitudeScene.contrails = [];
   for (let i = 0; i < 5; i++) {
+    const speed = 0.30 + Math.random() * 0.40;
+    const angle = Math.PI * 0.22 + (Math.random() - 0.5) * 0.08;
     gratitudeScene.contrails.push({
-      x: Math.random() * W * 1.3 - W * 0.15,
-      y: H * (0.10 + i * 0.14 + Math.random() * 0.10),
+      x: Math.random() * W * 1.2 - W * 0.25,
+      y: Math.random() * H * 0.55 - H * 0.08,
       len: 160 + Math.random() * 200,
       thick: 7 + Math.random() * 12,
-      speed: 0.30 + Math.random() * 0.40,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      angle,
       alpha: 0.14 + Math.random() * 0.14
     });
   }
@@ -1551,20 +1564,28 @@ function drawGratitudeContrails() {
   if (!gratitudeScene.active || gratitudeScene.skyAlpha <= 0.05) return;
   ctx.save();
   gratitudeScene.contrails.forEach(c => {
-    c.x += c.speed;
-    if (c.x > W + c.len) c.x = -c.len - 60;
+    c.x += c.vx;
+    c.y += c.vy;
+    if (c.x > W + c.len || c.y > H + c.thick * 2) {
+      c.x = -c.len - Math.random() * W * 0.3;
+      c.y = -c.thick * 2 - Math.random() * H * 0.25;
+    }
     const a = c.alpha * gratitudeScene.skyAlpha;
+    ctx.save();
+    ctx.translate(c.x + c.len * 0.5, c.y);
+    ctx.rotate(c.angle);
     ctx.globalAlpha = a;
     ctx.filter = 'blur(10px)';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
     ctx.beginPath();
-    ctx.ellipse(c.x + c.len * 0.5, c.y, c.len * 0.5, c.thick, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, c.len * 0.5, c.thick, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.filter = 'blur(5px)';
     ctx.globalAlpha = a * 0.6;
     ctx.beginPath();
-    ctx.ellipse(c.x + c.len * 0.35, c.y + c.thick * 0.25, c.len * 0.28, c.thick * 0.55, 0, 0, Math.PI * 2);
+    ctx.ellipse(-c.len * 0.15, c.thick * 0.25, c.len * 0.28, c.thick * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   });
   ctx.restore();
 }
@@ -2178,6 +2199,7 @@ async function release() {
     heroLineEl.classList.toggle('hero-line--navy',  isNavyPhase);
     heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
     heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
+    heroLineEl.classList.toggle('hero-line--dark-blue', isGratitude);
     heroLineEl.classList.toggle('hero-line--large', isLoneliness);
     startHeroLineWordReveal(heroLineEl, heroLineText);
   }, heroLineShowAt);
@@ -2186,6 +2208,7 @@ async function release() {
     heroFarewellEl.classList.toggle('hero-farewell--navy',  isNavyPhase);
     heroFarewellEl.classList.toggle('hero-farewell--green', isGreenPhase);
     heroFarewellEl.classList.toggle('hero-farewell--pink',  isPinkPhase);
+    heroFarewellEl.classList.toggle('hero-farewell--dark-blue', isGratitude);
   }, heroLineShowAt + 5000);
 
   setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
@@ -2216,10 +2239,12 @@ async function release() {
       heroLineEl.classList.remove('hero-line--navy');
       heroLineEl.classList.remove('hero-line--green');
       heroLineEl.classList.remove('hero-line--pink');
+      heroLineEl.classList.remove('hero-line--dark-blue');
       heroLineEl.classList.remove('hero-line--large');
       heroFarewellEl.classList.remove('hero-farewell--navy');
       heroFarewellEl.classList.remove('hero-farewell--green');
       heroFarewellEl.classList.remove('hero-farewell--pink');
+      heroFarewellEl.classList.remove('hero-farewell--dark-blue');
     }, HERO_LINE_EXIT_DURATION_MS);
 
     clearFarewellTimers();
