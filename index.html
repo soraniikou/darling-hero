@@ -442,7 +442,22 @@
     flex-wrap: wrap;
     text-align: center;
   }
-  /* Sorrow / Weariness 専用：紺色テキスト */
+  /* Loneliness 専用：紺色（紫・月の背景でも視認できる） */
+  .hero-line--loneliness-navy .hero-line-word {
+    color: rgba(175, 198, 255, 0.97);
+    text-shadow:
+      0 0 3px rgba(255, 255, 255, 0.55),
+      0 0 18px rgba(100, 140, 230, 0.75),
+      0 0 40px rgba(50, 80, 180, 0.45);
+  }
+  .hero-farewell--loneliness-navy .farewell-word {
+    color: rgba(175, 198, 255, 0.86);
+    text-shadow:
+      0 0 2px rgba(255, 255, 255, 0.45),
+      0 0 14px rgba(100, 140, 230, 0.65),
+      0 0 30px rgba(50, 80, 180, 0.32);
+  }
+  /* Sorrow 専用：紺色テキスト */
   .hero-line--navy .hero-line-word {
     color: rgba(120, 175, 255, 0.95);
     text-shadow: 0 0 22px rgba(80, 140, 255, 0.7), 0 0 44px rgba(60, 100, 220, 0.35);
@@ -2208,6 +2223,7 @@ async function release() {
     heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
     heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
     heroLineEl.classList.toggle('hero-line--dark-blue', isGratitude);
+    heroLineEl.classList.toggle('hero-line--loneliness-navy', isLoneliness);
     heroLineEl.classList.toggle('hero-line--large', isLoneliness);
     startHeroLineWordReveal(heroLineEl, heroLineText);
   }, heroLineShowAt);
@@ -2217,6 +2233,7 @@ async function release() {
     heroFarewellEl.classList.toggle('hero-farewell--green', isGreenPhase);
     heroFarewellEl.classList.toggle('hero-farewell--pink',  isPinkPhase);
     heroFarewellEl.classList.toggle('hero-farewell--dark-blue', isGratitude);
+    heroFarewellEl.classList.toggle('hero-farewell--loneliness-navy', isLoneliness);
   }, heroLineShowAt + 5000);
 
   setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
@@ -2248,11 +2265,13 @@ async function release() {
       heroLineEl.classList.remove('hero-line--green');
       heroLineEl.classList.remove('hero-line--pink');
       heroLineEl.classList.remove('hero-line--dark-blue');
+      heroLineEl.classList.remove('hero-line--loneliness-navy');
       heroLineEl.classList.remove('hero-line--large');
       heroFarewellEl.classList.remove('hero-farewell--navy');
       heroFarewellEl.classList.remove('hero-farewell--green');
       heroFarewellEl.classList.remove('hero-farewell--pink');
       heroFarewellEl.classList.remove('hero-farewell--dark-blue');
+      heroFarewellEl.classList.remove('hero-farewell--loneliness-navy');
     }, HERO_LINE_EXIT_DURATION_MS);
 
     clearFarewellTimers();
