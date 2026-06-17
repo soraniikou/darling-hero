@@ -390,7 +390,7 @@
     gap: var(--hero-msg-word-gap);
     max-width: 96vw;
     font-family: 'Great Vibes', 'Allura', cursive;
-    font-size: clamp(1.792rem, 4.48vw, 2.816rem);
+    font-size: clamp(0.896rem, 2.24vw, 1.408rem);
     font-weight: 400;
     color: transparent;
     letter-spacing: 0.02em;
@@ -437,7 +437,7 @@
   }
   /* Loneliness 専用：2倍サイズ・折り返し許可 */
   .hero-line--large {
-    font-size: clamp(3.584rem, 8.96vw, 5.632rem);
+    font-size: clamp(1.792rem, 4.48vw, 2.816rem);
     white-space: normal;
     flex-wrap: wrap;
     text-align: center;
@@ -1465,9 +1465,9 @@ function startLonelinessScene() {
   const W = window.innerWidth;
   const H = window.innerHeight;
   const moonColors = [
-    { r: 90,  g: 130, b: 230 }, // 青
+    { r: 35,  g: 58,  b: 140 }, // 青（暗め）
     { r: 170, g: 100, b: 230 }, // 紫
-    { r:  80, g: 200, b: 140 }, // 緑
+    { r: 38,  g: 95,  b: 72  }, // 緑（暗め）
     { r: 240, g: 235, b: 155 }, // 淡い黄
     { r: 240, g: 185, b: 215 }, // 淡いピンク
   ];
