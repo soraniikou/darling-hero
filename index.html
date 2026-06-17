@@ -2212,7 +2212,7 @@ async function release() {
   if (phase.skyScene) startGratitudeScene();
 
   // 最後の一行を表示（演出が落ち着いた頃）
-  const heroLineText = lineFn(userName);
+  const heroLineText = lineFn(userName.toLowerCase());
   const heroLineShowAt = phase.laserDuration + 800;
   const isNavyPhase  = phase.name === 'Sorrow';
   const isGreenPhase = phase.name === 'Weariness';
