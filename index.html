@@ -1267,7 +1267,11 @@ function loop() {
     ctx.fill();
   });
 
-  const triMul = (1 - mb) * skyMul;
+  const lonelinessTriMul =
+    lonelinessScene.active && lonelinessScene.alpha > 0
+      ? Math.max(0, 1 - lonelinessScene.alpha * 1.4)
+      : 1;
+  const triMul = (1 - mb) * skyMul * lonelinessTriMul;
   triMarks.forEach(tr => {
     tr.x += tr.vx; tr.y += tr.vy; tr.rot += tr.vr;
     if (tr.x < -300) tr.x = W + 200;
