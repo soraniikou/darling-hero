@@ -1445,7 +1445,6 @@ let lonelinessScene = { active: false, alpha: 0, fadeOut: false, moons: [] };
 function startLonelinessScene() {
   const W = window.innerWidth;
   const H = window.innerHeight;
-  // 5色の月を斜め方向（左上→右下）に配置
   const moonColors = [
     { r: 90,  g: 130, b: 230 }, // 青
     { r: 170, g: 100, b: 230 }, // 紫
@@ -1453,14 +1452,23 @@ function startLonelinessScene() {
     { r: 240, g: 235, b: 155 }, // 淡い黄
     { r: 240, g: 185, b: 215 }, // 淡いピンク
   ];
-  lonelinessScene.moons = moonColors.map((col, i) => {
-    const t = i / 4;
-    return {
-      x: W * (0.10 + t * 0.80),
-      y: H * (0.10 + t * 0.75),
+  // 曲線上に配置（二次ベジェ：左上 → カーブ → 右下）
+  const p0 = { x: W * 0.08, y: H * 0.12 };
+  const p1 = { x: W * 0.40 + (Math.random() - 0.5) * W * 0.14, y: H * 0.50 + (Math.random() - 0.5) * H * 0.10 };
+  const p2 = { x: W * 0.88, y: H * 0.84 };
+  lonelinessScene.moons = [];
+  let t = 0;
+  moonColors.forEach((col, i) => {
+    if (i > 0) t += 0.13 + Math.random() * 0.22;
+    t = Math.min(1, t);
+    const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+    const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+    lonelinessScene.moons.push({
+      x: x + (Math.random() - 0.5) * 40,
+      y: y + (Math.random() - 0.5) * 32,
       r: 38,
       col
-    };
+    });
   });
   lonelinessScene.active = true;
   lonelinessScene.alpha = 0;
