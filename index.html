@@ -1464,7 +1464,7 @@ function startJoyLaceCurtains() {
   const W = laserCanvas.width;
   const H = laserCanvas.height;
   const count = 4;
-  const lineW = W * 0.09;
+  const lineW = W * 0.045;
   for (let i = 0; i < count; i++) {
     const centerX = W * (0.2 + i * 0.2);
     joyLaceCurtains.push({
@@ -1516,9 +1516,9 @@ function drawJoyLacePanel(ctx, panel, time, H) {
   ctx.closePath();
 
   const hBase = panel.hueBase;
-  const sat = 86;
-  const lit = 52;
-  const fillA = alpha * 0.4;
+  const sat = 72;
+  const lit = 64;
+  const fillA = alpha * 0.18;
 
   ctx.save();
   ctx.fillStyle = `hsla(${hBase % 360}, ${sat}%, ${lit}%, ${fillA})`;
@@ -2053,7 +2053,7 @@ function drawLasers() {
     joyLaceCurtains.forEach(c => {
       c.alpha = c.fadeOut
         ? Math.max(0, c.alpha - 0.01)
-        : Math.min(0.78, c.alpha + 0.018);
+        : Math.min(0.38, c.alpha + 0.018);
 
       if (!c.fadeOut && c.dropY < 0) {
         c.dropY += 1.8;
