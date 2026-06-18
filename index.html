@@ -1470,7 +1470,7 @@ function spawnJoyRibbons() {
   const ribbonConfigs = [
     { angle: -Math.PI / 2, color: { r: 255, g: 105, b: 180 } },
     { angle: Math.PI / 2,  color: { r: 255, g: 130, b: 195 } },
-    { angle: Math.PI,      color: { r: 255, g: 220, b: 75  } },
+    { angle: Math.PI,      color: { r: 255, g: 248, b: 195 } },
     { angle: 0,            color: { r: 120, g: 215, b: 255 } },
     { angle: -Math.PI / 4,  color: { r: 95,  g: 220, b: 135 } }
   ];
@@ -1498,15 +1498,16 @@ function fadeJoyRibbons() {
 }
 
 function drawLongJoyRibbon(ctx, length, width, alpha, color, flutter) {
-  const segs = 22;
+  const segs = 8;
   const hw = width * 0.5;
   const { r, g, b } = color;
+  const waveAmp = width * 0.1;
 
   ctx.beginPath();
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
     const x = -t * length;
-    const wave = Math.sin(t * Math.PI * 5 + flutter) * width * 0.62;
+    const wave = Math.sin(t * Math.PI * 2 + flutter) * waveAmp;
     const y = -hw + wave;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
@@ -1514,29 +1515,23 @@ function drawLongJoyRibbon(ctx, length, width, alpha, color, flutter) {
   for (let i = segs; i >= 0; i--) {
     const t = i / segs;
     const x = -t * length;
-    const wave = Math.sin(t * Math.PI * 5 + flutter + 0.85) * width * 0.62;
+    const wave = Math.sin(t * Math.PI * 2 + flutter + 0.4) * waveAmp;
     const y = hw + wave;
     ctx.lineTo(x, y);
   }
   ctx.closePath();
 
   ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.9})`;
-  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.45})`;
-  ctx.shadowBlur = 10;
+  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.35})`;
+  ctx.shadowBlur = 6;
   ctx.fill();
 
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.35})`;
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.28})`;
+  ctx.lineWidth = 0.8;
   ctx.beginPath();
-  for (let i = 0; i <= segs; i++) {
-    const t = i / segs;
-    const x = -t * length;
-    const wave = Math.sin(t * Math.PI * 5 + flutter + 0.42) * width * 0.35;
-    const y = wave * 0.25;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-length, 0);
   ctx.stroke();
 }
 
@@ -2084,10 +2079,10 @@ function drawLasers() {
 
       const px = -dy / dist;
       const py = dx / dist;
-      const flutterOff = Math.sin(r.flutter) * r.width * 1.6;
+      const flutterOff = Math.sin(r.flutter) * r.width * 0.35;
       const drawX = r.x + px * flutterOff;
       const drawY = r.y + py * flutterOff;
-      const drawAngle = Math.atan2(dy, dx) + Math.sin(r.flutter * 0.65) * 0.22;
+      const drawAngle = Math.atan2(dy, dx) + Math.sin(r.flutter * 0.65) * 0.06;
 
       laserCtx.save();
       laserCtx.translate(drawX, drawY);
