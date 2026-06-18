@@ -654,7 +654,7 @@ const PHASES = {
     burstGravity: -0.02,
     burstUpward: true,
     glowColor: '#ffd860',
-    ribbonBurst: true,
+    laceCurtain: true,
     burstCharScale: 0.8
   },
   shaa: {
@@ -1465,126 +1465,141 @@ function fadeHopePetals() {
 }
 
 // ============================================================
-// Joy リボンシステム（yorokobi フェーズ専用）
+// Joy レースカーテン（yorokobi フェーズ専用）
 // ============================================================
-let joyRibbons = [];
+let joyLaceCurtains = [];
+let joyLaceTime = 0;
 
-function spawnJoyRibbons() {
-  joyRibbons = [];
+function startJoyLaceCurtains() {
+  joyLaceCurtains = [];
+  joyLaceTime = 0;
   const W = laserCanvas.width;
   const H = laserCanvas.height;
-  const cx = W / 2;
-  const cy = H / 2;
-  const ribbonConfigs = [
-    { angle: -Math.PI / 2, color: { r: 255, g: 145, b: 215 }, shine: { r: 255, g: 220, b: 245 } },
-    { angle: Math.PI / 2,  color: { r: 255, g: 165, b: 225 }, shine: { r: 255, g: 230, b: 250 } },
-    { angle: Math.PI,      color: { r: 255, g: 235, b: 130 }, shine: { r: 255, g: 252, b: 210 } },
-    { angle: 0,            color: { r: 120, g: 210, b: 255 }, shine: { r: 210, g: 245, b: 255 } },
-    { angle: -Math.PI / 4,  color: { r: 110, g: 235, b: 175 }, shine: { r: 210, g: 255, b: 230 } }
-  ];
-  ribbonConfigs.forEach(cfg => {
-    const angle = cfg.angle + (Math.random() - 0.5) * 0.12;
-    const edgeDist = Math.max(W, H) * (0.54 + Math.random() * 0.06);
-    joyRibbons.push({
-      x: cx + Math.cos(angle) * edgeDist,
-      y: cy + Math.sin(angle) * edgeDist,
-      angle,
-      color: cfg.color,
-      shine: cfg.shine,
-      speed: 0.45 + Math.random() * 0.25,
-      flutter: Math.random() * Math.PI * 2,
-      flutterSpeed: 0.035 + Math.random() * 0.025,
-      wind: Math.random() * Math.PI * 2,
-      windSpeed: 0.028 + Math.random() * 0.018,
-      shimmer: Math.random() * Math.PI * 2,
-      length: 380 + Math.random() * 180,
-      width: 5.5 + Math.random() * 2,
+  const count = 9;
+  const baseW = W / (count - 1.2);
+  for (let i = 0; i < count; i++) {
+    joyLaceCurtains.push({
+      baseX: i * baseW - baseW * 0.28,
+      width: baseW * 1.38,
+      dropY: -H * (0.22 + Math.random() * 0.12),
+      wavePhase: Math.random() * Math.PI * 2,
+      waveSpeed: 0.016 + Math.random() * 0.014,
+      swayAmp: 18 + Math.random() * 24,
+      hueBase: 300 + Math.random() * 100,
       alpha: 0,
-      fadeOut: false
+      fadeOut: false,
+      shimmer: Math.random() * Math.PI * 2,
+      laceSeed: Math.random() * 1000
     });
-  });
+  }
 }
 
-function fadeJoyRibbons() {
-  joyRibbons.forEach(r => { r.fadeOut = true; });
+function fadeJoyLaceCurtains() {
+  joyLaceCurtains.forEach(c => { c.fadeOut = true; });
 }
 
-function drawLongJoyRibbon(ctx, length, width, alpha, color, shine, time, shimmer) {
-  const segs = 32;
-  const hw = width * 0.5;
-  const { r, g, b } = color;
-  const { r: sr, g: sg, b: sb } = shine;
-  const topPts = [];
-  const botPts = [];
-  const midPts = [];
+function drawJoyLacePanel(ctx, panel, time, H) {
+  const alpha = panel.alpha;
+  if (alpha <= 0) return;
+
+  const pW = panel.width;
+  const pX = panel.baseX;
+  const dropOff = panel.dropY;
+  const curtainH = H * 1.1;
+  const segs = 30;
+  const leftEdge = [];
+  const rightEdge = [];
 
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
-    const x = -t * length;
-    const billow = Math.pow(t, 1.75) * length * 0.078;
-    const fold1 = Math.sin(t * Math.PI * 2.2 + time) * billow;
-    const fold2 = Math.sin(t * Math.PI * 3.8 + time * 1.28 + 0.9) * billow * 0.58;
-    const fold3 = Math.sin(t * Math.PI * 1.15 + time * 0.62 + 2.1) * billow * 0.42;
-    const gust = Math.sin(time * 0.55 + t * Math.PI * 0.8) * billow * 0.35;
-    const yOff = fold1 + fold2 + fold3 + gust;
-    topPts.push({ x, y: -hw + yOff });
-    botPts.push({ x, y: hw + yOff * 0.88 });
-    midPts.push({ x, y: yOff * 0.35 });
+    const y = dropOff + t * curtainH;
+    const puff = Math.pow(t, 1.35);
+    const w1 = Math.sin(t * Math.PI * 2.3 + panel.wavePhase + time * panel.waveSpeed) * panel.swayAmp * puff;
+    const w2 = Math.sin(t * Math.PI * 4.2 + time * 0.9 + panel.wavePhase * 1.1) * panel.swayAmp * 0.5 * puff;
+    const w3 = Math.sin(t * Math.PI * 1.05 + time * 0.38 + 1.2) * panel.swayAmp * 0.28;
+    const wave = w1 + w2 + w3;
+    leftEdge.push({ x: pX + wave, y });
+    rightEdge.push({ x: pX + pW + wave * 0.82, y });
   }
 
   ctx.beginPath();
-  ctx.moveTo(topPts[0].x, topPts[0].y);
-  topPts.forEach(p => ctx.lineTo(p.x, p.y));
-  for (let i = botPts.length - 1; i >= 0; i--) ctx.lineTo(botPts[i].x, botPts[i].y);
+  ctx.moveTo(leftEdge[0].x, leftEdge[0].y);
+  leftEdge.forEach(p => ctx.lineTo(p.x, p.y));
+  for (let i = rightEdge.length - 1; i >= 0; i--) ctx.lineTo(rightEdge[i].x, rightEdge[i].y);
   ctx.closePath();
 
-  const satin = ctx.createLinearGradient(0, -hw * 1.4, 0, hw * 1.4);
-  satin.addColorStop(0, `rgba(${sr}, ${sg}, ${sb}, ${alpha * 0.92})`);
-  satin.addColorStop(0.28, `rgba(${r}, ${g}, ${b}, ${alpha * 0.82})`);
-  satin.addColorStop(0.48, `rgba(255, 255, 255, ${alpha * 0.72})`);
-  satin.addColorStop(0.52, `rgba(255, 255, 255, ${alpha * 0.65})`);
-  satin.addColorStop(0.72, `rgba(${r}, ${g}, ${b}, ${alpha * 0.8})`);
-  satin.addColorStop(1, `rgba(${Math.max(0, r - 18)}, ${Math.max(0, g - 18)}, ${Math.max(0, b - 18)}, ${alpha * 0.75})`);
-  ctx.fillStyle = satin;
-  ctx.shadowColor = `rgba(255, 255, 255, ${alpha * 0.42})`;
-  ctx.shadowBlur = 10;
-  ctx.fill();
+  const hBase = panel.hueBase + time * 20;
+  const aurora = ctx.createLinearGradient(pX, dropOff, pX + pW, dropOff + curtainH);
+  aurora.addColorStop(0, `hsla(${hBase % 360}, 88%, 84%, ${alpha * 0.26})`);
+  aurora.addColorStop(0.22, `hsla(${(hBase + 55) % 360}, 92%, 78%, ${alpha * 0.4})`);
+  aurora.addColorStop(0.48, `hsla(${(hBase + 120) % 360}, 90%, 82%, ${alpha * 0.44})`);
+  aurora.addColorStop(0.72, `hsla(${(hBase + 190) % 360}, 85%, 76%, ${alpha * 0.36})`);
+  aurora.addColorStop(1, `hsla(${(hBase + 250) % 360}, 80%, 74%, ${alpha * 0.2})`);
 
-  ctx.shadowBlur = 0;
   ctx.save();
+  ctx.fillStyle = aurora;
+  ctx.shadowColor = `hsla(${(hBase + 70) % 360}, 100%, 88%, ${alpha * 0.38})`;
+  ctx.shadowBlur = 26;
+  ctx.fill();
+  ctx.shadowBlur = 0;
   ctx.clip();
-  for (let band = 0; band < 3; band++) {
-    const travel = (shimmer * 0.018 + band * 0.31) % 1;
-    const bx = -travel * length;
-    const bw = length * 0.14;
-    const bandGrad = ctx.createLinearGradient(bx - bw, 0, bx + bw, 0);
+
+  for (let b = 0; b < 5; b++) {
+    const bandY = dropOff + ((time * 48 + b * curtainH * 0.19) % curtainH);
+    const bandGrad = ctx.createLinearGradient(pX - 24, bandY, pX + pW + 24, bandY + 70);
     bandGrad.addColorStop(0, 'rgba(255,255,255,0)');
-    bandGrad.addColorStop(0.45, `rgba(255,255,255,${alpha * 0.55})`);
-    bandGrad.addColorStop(0.55, `rgba(255,255,255,${alpha * 0.75})`);
+    bandGrad.addColorStop(0.45, `rgba(255,255,255,${alpha * 0.26})`);
+    bandGrad.addColorStop(0.55, `hsla(${(hBase + 90 + b * 30) % 360},100%,92%,${alpha * 0.18})`);
     bandGrad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = bandGrad;
-    ctx.fillRect(bx - bw, -hw * 2.5, bw * 2, hw * 5);
+    ctx.fillRect(pX - 36, bandY, pW + 72, 68);
   }
 
-  for (let i = 2; i < segs - 1; i += 3) {
-    const p = midPts[i];
-    const sparkle = Math.sin(shimmer * 1.4 + i * 1.7) * 0.5 + 0.5;
-    if (sparkle < 0.62) continue;
-    const sz = width * (0.35 + sparkle * 0.45);
-    const sa = alpha * (sparkle - 0.55) * 1.6;
-    ctx.fillStyle = `rgba(255, 255, 255, ${sa})`;
+  for (let ly = dropOff + 10; ly < dropOff + curtainH - 8; ly += 16) {
+    const row = Math.floor((ly - dropOff) / 16);
+    for (let lx = pX + 8 + (row % 2) * 8; lx < pX + pW - 8; lx += 16) {
+      const pulse = 0.4 + 0.3 * Math.sin(lx * 0.07 + ly * 0.05 + time * 1.1 + panel.laceSeed);
+      ctx.beginPath();
+      ctx.ellipse(lx, ly, 2.4, 3.8, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${pulse * alpha * 0.22})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,255,255,${pulse * alpha * 0.14})`;
+      ctx.lineWidth = 0.55;
+      ctx.stroke();
+    }
+  }
+
+  const scallopY = leftEdge[leftEdge.length - 1].y;
+  for (let sx = pX + 6; sx < pX + pW - 6; sx += 14) {
+    const sc = Math.sin(sx * 0.15 + time * 0.6 + panel.laceSeed) * 0.5 + 0.5;
     ctx.beginPath();
-    ctx.moveTo(p.x, p.y - sz);
-    ctx.lineTo(p.x + sz * 0.22, p.y - sz * 0.22);
-    ctx.lineTo(p.x + sz, p.y);
-    ctx.lineTo(p.x + sz * 0.22, p.y + sz * 0.22);
-    ctx.lineTo(p.x, p.y + sz);
-    ctx.lineTo(p.x - sz * 0.22, p.y + sz * 0.22);
-    ctx.lineTo(p.x - sz, p.y);
-    ctx.lineTo(p.x - sz * 0.22, p.y - sz * 0.22);
+    ctx.arc(sx, scallopY + 4, 5 + sc * 2, Math.PI, 0);
+    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.2})`;
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+
+  for (let sp = 0; sp < 10; sp++) {
+    const sy = dropOff + (sp / 10) * curtainH * 0.92 + 20;
+    const sparkle = Math.sin(time * 2.4 + sp * 1.4 + panel.shimmer);
+    if (sparkle < 0.52) continue;
+    const sx = pX + pW * (0.12 + (sp * 0.09) % 0.76) + Math.sin(time * 1.3 + sp) * 14;
+    const sz = 1.8 + sparkle * 3.2;
+    const sa = alpha * (sparkle - 0.48) * 1.35;
+    ctx.fillStyle = `rgba(255,255,255,${sa})`;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - sz);
+    ctx.lineTo(sx + sz * 0.22, sy - sz * 0.22);
+    ctx.lineTo(sx + sz, sy);
+    ctx.lineTo(sx + sz * 0.22, sy + sz * 0.22);
+    ctx.lineTo(sx, sy + sz);
+    ctx.lineTo(sx - sz * 0.22, sy + sz * 0.22);
+    ctx.lineTo(sx - sz, sy);
+    ctx.lineTo(sx - sz * 0.22, sy - sz * 0.22);
     ctx.closePath();
     ctx.fill();
   }
+
   ctx.restore();
 }
 
@@ -2105,53 +2120,27 @@ function drawLasers() {
     hopePetals = hopePetals.filter(p => !(p.fadeOut && p.alpha <= 0));
   }
 
-  // ── Joy リボン（yorokobi 以外では joyRibbons が空なので何もしない）──
-  if (joyRibbons.length > 0) {
-    const cx = laserCanvas.width / 2;
-    const cy = laserCanvas.height / 2;
-    joyRibbons.forEach(r => {
-      r.alpha = r.fadeOut
-        ? Math.max(0, r.alpha - 0.012)
-        : Math.min(0.72, r.alpha + 0.025);
+  // ── Joy レースカーテン（yorokobi 以外では joyLaceCurtains が空なので何もしない）──
+  if (joyLaceCurtains.length > 0) {
+    joyLaceTime += 0.016;
+    const H = laserCanvas.height;
+    joyLaceCurtains.forEach(c => {
+      c.alpha = c.fadeOut
+        ? Math.max(0, c.alpha - 0.01)
+        : Math.min(0.78, c.alpha + 0.018);
 
-      const dx = cx - r.x;
-      const dy = cy - r.y;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      r.x += (dx / dist) * r.speed;
-      r.y += (dy / dist) * r.speed;
-
-      if (dist < 45) {
-        const edgeDist = Math.max(laserCanvas.width, laserCanvas.height) * (0.52 + Math.random() * 0.06);
-        r.x = cx + Math.cos(r.angle) * edgeDist;
-        r.y = cy + Math.sin(r.angle) * edgeDist;
+      if (!c.fadeOut && c.dropY < 0) {
+        c.dropY += 2.6;
+        if (c.dropY > 0) c.dropY = 0;
       }
 
-      r.flutter += r.flutterSpeed;
-      r.wind += r.windSpeed;
-      r.shimmer += 0.06;
+      c.wavePhase += c.waveSpeed * 0.55;
+      c.shimmer += 0.05;
 
-      if (r.alpha <= 0) return;
-
-      const px = -dy / dist;
-      const py = dx / dist;
-      const windSway1 = Math.sin(r.wind) * r.length * 0.014;
-      const windSway2 = Math.sin(r.wind * 0.58 + 1.4) * r.length * 0.009;
-      const windSway3 = Math.sin(r.flutter * 0.85 + r.wind * 0.3) * r.length * 0.006;
-      const flutterOff = windSway1 + windSway2 + windSway3;
-      const drawX = r.x + px * flutterOff;
-      const drawY = r.y + py * flutterOff;
-      const drawAngle = Math.atan2(dy, dx)
-        + Math.sin(r.wind * 0.52) * 0.14
-        + Math.sin(r.flutter * 0.38 + 0.6) * 0.07;
-
-      laserCtx.save();
-      laserCtx.translate(drawX, drawY);
-      laserCtx.rotate(drawAngle);
-      laserCtx.globalAlpha = r.alpha;
-      drawLongJoyRibbon(laserCtx, r.length, r.width, r.alpha, r.color, r.shine, r.flutter, r.shimmer);
-      laserCtx.restore();
+      if (c.alpha <= 0) return;
+      drawJoyLacePanel(laserCtx, c, joyLaceTime, H);
     });
-    joyRibbons = joyRibbons.filter(r => !(r.fadeOut && r.alpha <= 0));
+    joyLaceCurtains = joyLaceCurtains.filter(c => !(c.fadeOut && c.alpha <= 0));
   }
 
   // ── Loneliness の月（sabishii 以外では active=false なので何もしない）──
@@ -2388,15 +2377,15 @@ async function release() {
   phaseNameEl.classList.toggle('phase-name--sorrow', phase.name === 'Sorrow');
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
-  // レーザー発射（swayFall・petalBurst・skyScene・ribbonBurst 以外）
-  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.ribbonBurst) startLaserBurst(phase);
+  // レーザー発射（swayFall・petalBurst・skyScene・laceCurtain 以外）
+  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain) startLaserBurst(phase);
 
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
     if (phase.petalBurst) spawnHopePetals();
-    if (phase.ribbonBurst) spawnJoyRibbons();
-    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.ribbonBurst) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    if (phase.laceCurtain) startJoyLaceCurtains();
+    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
 
@@ -2441,7 +2430,7 @@ async function release() {
   setTimeout(() => {
     fadeSorrowBirds();
     fadeHopePetals();
-    fadeJoyRibbons();
+    fadeJoyLaceCurtains();
     stopLonelinessScene();
     stopGratitudeScene();
     spotlightGlow.classList.remove('show');
@@ -2499,7 +2488,7 @@ async function release() {
     cachedText = '';
     sorrowBirds = [];
     hopePetals = [];
-    joyRibbons = [];
+    joyLaceCurtains = [];
     resetLonelinessScene();
     resetGratitudeScene();
   }, inputReadyAt);
