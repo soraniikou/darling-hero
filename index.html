@@ -1489,7 +1489,9 @@ function startJoyLaceCurtains() {
     joyLaceCurtains.push({
       baseX: centerX - lineW * 0.5,
       width: lineW,
-      dropY: -H * (0.18 + Math.random() * 0.08),
+      extendLen: 0,
+      maxLen: H * 1.1,
+      extendSpeed: 2.0 + Math.random() * 0.9,
       wavePhase: Math.random() * Math.PI * 2,
       waveSpeed: 0.004 + Math.random() * 0.003,
       swayAmp: 11 + Math.random() * 9,
@@ -1506,19 +1508,18 @@ function fadeJoyLaceCurtains() {
 
 function drawJoyLacePanel(ctx, panel, time, H) {
   const alpha = panel.alpha;
-  if (alpha <= 0) return;
+  if (alpha <= 0 || panel.extendLen <= 0) return;
 
   const pW = panel.width;
   const pX = panel.baseX;
-  const dropOff = panel.dropY;
-  const curtainH = H * 1.1;
+  const ribbonLen = panel.extendLen;
   const segs = 30;
   const leftEdge = [];
   const rightEdge = [];
 
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
-    const y = dropOff + t * curtainH;
+    const y = t * ribbonLen;
     const puff = Math.pow(t, 1.2);
     const slow = time * panel.waveSpeed;
     const w1 = Math.sin(t * Math.PI * 1.35 + panel.wavePhase + slow) * panel.swayAmp * puff;
@@ -1535,16 +1536,14 @@ function drawJoyLacePanel(ctx, panel, time, H) {
   ctx.closePath();
 
   const hBase = panel.hueBase;
-  const sat = 72;
-  const lit = 64;
-  const fillA = alpha * 0.18;
+  const sat = 80;
+  const lit = 54;
+  const fillA = alpha * 0.28;
 
   ctx.save();
   ctx.fillStyle = `hsla(${hBase % 360}, ${sat}%, ${lit}%, ${fillA})`;
   ctx.shadowBlur = 0;
   ctx.fill();
-  ctx.clip();
-
   ctx.restore();
 }
 
@@ -2074,9 +2073,8 @@ function drawLasers() {
         ? Math.max(0, c.alpha - 0.01)
         : Math.min(0.38, c.alpha + 0.018);
 
-      if (!c.fadeOut && c.dropY < 0) {
-        c.dropY += 1.8;
-        if (c.dropY > 0) c.dropY = 0;
+      if (!c.fadeOut && c.extendLen < c.maxLen) {
+        c.extendLen = Math.min(c.maxLen, c.extendLen + c.extendSpeed);
       }
 
       c.wavePhase += c.waveSpeed * 0.18;
