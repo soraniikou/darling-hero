@@ -531,6 +531,15 @@
     opacity: 1;
   }
 
+  @media (max-width: 640px) {
+    .hero-line:not(.hero-line--joy) {
+      font-size: clamp(1.075rem, 2.688vw, 1.69rem);
+    }
+    .hero-line--large:not(.hero-line--joy) {
+      font-size: clamp(2.15rem, 5.376vw, 3.379rem);
+    }
+  }
+
   @media (min-width: 641px) {
     .welcome-prompt {
       font-size: 1.47rem;
@@ -2330,10 +2339,12 @@ async function release() {
   const isPinkPhase  = phase.name === 'Love';
   const isLoneliness = phase.name === 'Loneliness';
   const isGratitude  = phase.name === 'Gratitude';
+  const isJoy        = phaseKey === 'yorokobi';
   if (isLoneliness) startLonelinessScene();
   setTimeout(() => {
     releaseBtn.classList.add('release-btn--hidden-cinematic');
     if (!isGratitude) beginMirrorBallBackgroundTransition();
+    heroLineEl.classList.toggle('hero-line--joy', isJoy);
     heroLineEl.classList.toggle('hero-line--navy',  isNavyPhase);
     heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
     heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
@@ -2377,6 +2388,7 @@ async function release() {
       heroLineEl.innerHTML = '';
       heroLineEl.style.transition = '';
       heroLineEl.classList.remove('hero-line--stacked');
+      heroLineEl.classList.remove('hero-line--joy');
       heroLineEl.classList.remove('hero-line--navy');
       heroLineEl.classList.remove('hero-line--green');
       heroLineEl.classList.remove('hero-line--pink');
