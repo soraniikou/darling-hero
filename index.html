@@ -533,10 +533,13 @@
 
   @media (max-width: 640px) {
     .hero-line:not(.hero-line--joy) {
-      font-size: clamp(1.075rem, 2.688vw, 1.69rem);
+      font-size: clamp(1.926rem, 4.816vw, 3.027rem);
     }
     .hero-line--large:not(.hero-line--joy) {
-      font-size: clamp(2.15rem, 5.376vw, 3.379rem);
+      font-size: clamp(3.852rem, 9.632vw, 6.054rem);
+    }
+    .hero-farewell:not(.hero-farewell--joy) {
+      font-size: clamp(1.075rem, 2.688vw, 1.69rem);
     }
   }
 
@@ -2355,6 +2358,7 @@ async function release() {
   }, heroLineShowAt);
 
   setTimeout(() => {
+    heroFarewellEl.classList.toggle('hero-farewell--joy', isJoy);
     heroFarewellEl.classList.toggle('hero-farewell--navy',  isNavyPhase);
     heroFarewellEl.classList.toggle('hero-farewell--green', isGreenPhase);
     heroFarewellEl.classList.toggle('hero-farewell--pink',  isPinkPhase);
@@ -2395,6 +2399,7 @@ async function release() {
       heroLineEl.classList.remove('hero-line--dark-blue');
       heroLineEl.classList.remove('hero-line--loneliness-navy');
       heroLineEl.classList.remove('hero-line--large');
+      heroFarewellEl.classList.remove('hero-farewell--joy');
       heroFarewellEl.classList.remove('hero-farewell--navy');
       heroFarewellEl.classList.remove('hero-farewell--green');
       heroFarewellEl.classList.remove('hero-farewell--pink');
