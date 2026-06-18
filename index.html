@@ -654,7 +654,8 @@ const PHASES = {
     burstGravity: -0.02,
     burstUpward: true,
     glowColor: '#ffd860',
-    arrowBeam: true
+    ribbonBurst: true,
+    burstCharScale: 0.8
   },
   shaa: {
     name: 'Gratitude',
@@ -1456,6 +1457,78 @@ function fadeHopePetals() {
 }
 
 // ============================================================
+// Joy リボンシステム（yorokobi フェーズ専用）
+// ============================================================
+let joyRibbons = [];
+
+function spawnJoyRibbons() {
+  joyRibbons = [];
+  const W = laserCanvas.width;
+  const H = laserCanvas.height;
+  const cx = W / 2;
+  const cy = H / 2;
+  const baseAngles = [
+    -Math.PI / 2,
+    Math.PI / 2,
+    Math.PI,
+    0,
+    -Math.PI / 4
+  ];
+  baseAngles.forEach(baseAngle => {
+    for (let i = 0; i < 7; i++) {
+      const angle = baseAngle + (Math.random() - 0.5) * 0.35;
+      const edgeDist = Math.max(W, H) * (0.52 + Math.random() * 0.08);
+      joyRibbons.push({
+        x: cx + Math.cos(angle) * edgeDist,
+        y: cy + Math.sin(angle) * edgeDist,
+        angle,
+        speed: 0.55 + Math.random() * 0.45,
+        flutter: Math.random() * Math.PI * 2,
+        flutterSpeed: 0.06 + Math.random() * 0.05,
+        rot: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.04,
+        size: 10 + Math.random() * 8,
+        alpha: 0,
+        fadeOut: false,
+        hueShift: Math.random() * 24 - 12
+      });
+    }
+  });
+}
+
+function fadeJoyRibbons() {
+  joyRibbons.forEach(r => { r.fadeOut = true; });
+}
+
+function drawJoyRibbonShape(ctx, size, alpha, hueShift) {
+  const r = 255;
+  const g = 118 + hueShift;
+  const b = 172 + hueShift * 0.4;
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.92})`;
+  ctx.shadowColor = `rgba(255, 90, 150, ${alpha * 0.55})`;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.32, -size * 0.05, size * 0.38, size * 0.28, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(size * 0.32, -size * 0.05, size * 0.38, size * 0.28, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${r}, ${g - 18}, ${b - 18}, ${alpha})`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08, size * 0.12);
+  ctx.quadraticCurveTo(-size * 0.28, size * 0.58, -size * 0.38, size * 0.88);
+  ctx.lineTo(-size * 0.04, size * 0.72);
+  ctx.lineTo(size * 0.04, size * 0.72);
+  ctx.quadraticCurveTo(size * 0.28, size * 0.58, size * 0.08, size * 0.12);
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${r}, ${g + 10}, ${b + 10}, ${alpha * 0.88})`;
+  ctx.fill();
+}
+
+// ============================================================
 // Loneliness 月システム（sabishii フェーズ専用）
 // ============================================================
 let isLonelinessPhase = false;
@@ -1972,6 +2045,49 @@ function drawLasers() {
     hopePetals = hopePetals.filter(p => !(p.fadeOut && p.alpha <= 0));
   }
 
+  // ── Joy リボン（yorokobi 以外では joyRibbons が空なので何もしない）──
+  if (joyRibbons.length > 0) {
+    const cx = laserCanvas.width / 2;
+    const cy = laserCanvas.height / 2;
+    joyRibbons.forEach(r => {
+      r.alpha = r.fadeOut
+        ? Math.max(0, r.alpha - 0.012)
+        : Math.min(0.88, r.alpha + 0.025);
+
+      const dx = cx - r.x;
+      const dy = cy - r.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      r.x += (dx / dist) * r.speed;
+      r.y += (dy / dist) * r.speed;
+
+      if (dist < 45) {
+        const edgeDist = Math.max(laserCanvas.width, laserCanvas.height) * (0.52 + Math.random() * 0.06);
+        r.x = cx + Math.cos(r.angle) * edgeDist;
+        r.y = cy + Math.sin(r.angle) * edgeDist;
+      }
+
+      r.flutter += r.flutterSpeed;
+      r.rot += r.rotSpeed;
+
+      if (r.alpha <= 0) return;
+
+      const px = -dy / dist;
+      const py = dx / dist;
+      const flutterOff = Math.sin(r.flutter) * r.size * 0.48;
+      const drawX = r.x + px * flutterOff;
+      const drawY = r.y + py * flutterOff;
+      const drawAngle = Math.atan2(dy, dx) + Math.PI + Math.sin(r.flutter * 0.7) * 0.3;
+
+      laserCtx.save();
+      laserCtx.translate(drawX, drawY);
+      laserCtx.rotate(drawAngle + r.rot * 0.15);
+      laserCtx.globalAlpha = r.alpha;
+      drawJoyRibbonShape(laserCtx, r.size, r.alpha, r.hueShift);
+      laserCtx.restore();
+    });
+    joyRibbons = joyRibbons.filter(r => !(r.fadeOut && r.alpha <= 0));
+  }
+
   // ── Loneliness の月（sabishii 以外では active=false なので何もしない）──
   if (lonelinessScene.active) {
     lonelinessScene.alpha = lonelinessScene.fadeOut
@@ -2010,6 +2126,12 @@ loop();
 // ============================================================
 // 文字飛散
 // ============================================================
+function applyBurstCharScale(span, phase) {
+  if (phase.burstCharScale) {
+    span.style.fontSize = `${2.24 * phase.burstCharScale}rem`;
+  }
+}
+
 function spawnHeroBurst(text, phase) {
   const overlay = document.getElementById('burstOverlay');
   overlay.innerHTML = '';
@@ -2041,6 +2163,7 @@ function spawnHeroBurst(text, phase) {
       const colorStr = `rgb(${c.core})`;
       span.style.color = colorStr;
       span.style.textShadow = `0 0 20px ${colorStr}, 0 0 40px ${colorStr}`;
+      applyBurstCharScale(span, phase);
       overlay.appendChild(span);
       const maxLife = slower ? 1900 + Math.random() * 1100 : 1300 + Math.random() * 700;
       burstCharSpans.push({
@@ -2078,6 +2201,7 @@ function spawnHeroBurst(text, phase) {
     const colorStr = `rgb(${c.core})`;
     span.style.color = colorStr;
     span.style.textShadow = `0 0 20px ${colorStr}, 0 0 40px ${colorStr}`;
+    applyBurstCharScale(span, phase);
     overlay.appendChild(span);
 
     const angle = Math.random() * Math.PI * 2;
@@ -2198,14 +2322,15 @@ async function release() {
   phaseNameEl.classList.toggle('phase-name--sorrow', phase.name === 'Sorrow');
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
-  // レーザー発射（swayFall・petalBurst・skyScene 以外）
-  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene) startLaserBurst(phase);
+  // レーザー発射（swayFall・petalBurst・skyScene・ribbonBurst 以外）
+  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.ribbonBurst) startLaserBurst(phase);
 
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
     if (phase.petalBurst) spawnHopePetals();
-    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    if (phase.ribbonBurst) spawnJoyRibbons();
+    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.ribbonBurst) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
 
@@ -2250,6 +2375,7 @@ async function release() {
   setTimeout(() => {
     fadeSorrowBirds();
     fadeHopePetals();
+    fadeJoyRibbons();
     stopLonelinessScene();
     stopGratitudeScene();
     spotlightGlow.classList.remove('show');
@@ -2307,6 +2433,7 @@ async function release() {
     cachedText = '';
     sorrowBirds = [];
     hopePetals = [];
+    joyRibbons = [];
     resetLonelinessScene();
     resetGratitudeScene();
   }, inputReadyAt);
