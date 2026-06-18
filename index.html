@@ -508,7 +508,7 @@
     gap: calc(var(--hero-msg-word-gap) * 1.4);
     max-width: 96vw;
     font-family: 'Great Vibes', 'Allura', cursive;
-    font-size: clamp(2.408rem, 6.02vw, 3.784rem);
+    font-size: clamp(1.926rem, 4.816vw, 3.027rem);
     font-weight: 400;
     color: transparent;
     letter-spacing: 0.02em;
@@ -2114,9 +2114,8 @@ loop();
 // 文字飛散
 // ============================================================
 function applyBurstCharScale(span, phase) {
-  if (phase.burstCharScale) {
-    span.style.fontSize = `${2.24 * phase.burstCharScale}rem`;
-  }
+  const scale = phase.burstCharScale ?? 0.8;
+  span.style.fontSize = `${2.24 * scale}rem`;
 }
 
 function spawnHeroBurst(text, phase) {
