@@ -1516,20 +1516,14 @@ function drawJoyLacePanel(ctx, panel, time, H) {
   ctx.closePath();
 
   const hBase = panel.hueBase;
-  const cx = pX + pW * 0.5;
-  const aurora = ctx.createLinearGradient(cx, dropOff, cx, dropOff + curtainH);
-  aurora.addColorStop(0, `hsla(${hBase % 360}, 78%, 56%, ${alpha * 0.14})`);
-  aurora.addColorStop(0.3, `hsla(${(hBase + 45) % 360}, 88%, 48%, ${alpha * 0.42})`);
-  aurora.addColorStop(0.5, `hsla(${(hBase + 90) % 360}, 92%, 42%, ${alpha * 0.52})`);
-  aurora.addColorStop(0.7, `hsla(${(hBase + 140) % 360}, 88%, 48%, ${alpha * 0.4})`);
-  aurora.addColorStop(1, `hsla(${(hBase + 200) % 360}, 78%, 54%, ${alpha * 0.12})`);
+  const sat = 86;
+  const lit = 52;
+  const fillA = alpha * 0.4;
 
   ctx.save();
-  ctx.fillStyle = aurora;
-  ctx.shadowColor = `hsla(${(hBase + 70) % 360}, 100%, 88%, ${alpha * 0.38})`;
-  ctx.shadowBlur = 26;
-  ctx.fill();
+  ctx.fillStyle = `hsla(${hBase % 360}, ${sat}%, ${lit}%, ${fillA})`;
   ctx.shadowBlur = 0;
+  ctx.fill();
   ctx.clip();
 
   ctx.restore();
