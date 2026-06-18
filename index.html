@@ -1287,7 +1287,8 @@ function loop() {
     lonelinessScene.active && lonelinessScene.alpha > 0
       ? Math.max(0, 1 - lonelinessScene.alpha * 1.4)
       : 1;
-  const triMul = (1 - mb) * skyMul * lonelinessTriMul;
+  const joyTriMul = joyLaceCurtains.length > 0 ? 0 : 1;
+  const triMul = (1 - mb) * skyMul * lonelinessTriMul * joyTriMul;
   triMarks.forEach(tr => {
     tr.x += tr.vx; tr.y += tr.vy; tr.rot += tr.vr;
     if (tr.x < -300) tr.x = W + 200;
@@ -1312,6 +1313,8 @@ function loop() {
     ctx.fill();
     ctx.restore();
   });
+
+  updateJoyAngelWings();
 
   let bubbleBlend = mb;
   if (gratitudeScene.active && gratitudeScene.bubbleAlpha > 0.001) {
@@ -1476,10 +1479,85 @@ function fadeHopePetals() {
 // ============================================================
 let joyLaceCurtains = [];
 let joyLaceTime = 0;
+let joyAngelWings = [];
+
+function startJoyAngelWings() {
+  joyAngelWings = [];
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const count = 38 + Math.floor(Math.random() * 14);
+  for (let i = 0; i < count; i++) {
+    joyAngelWings.push({
+      x: Math.random() * W,
+      y: H * (0.42 + Math.random() * 0.62),
+      vy: -(0.22 + Math.random() * 0.62),
+      vx: (Math.random() - 0.5) * 0.14,
+      rot: (Math.random() - 0.5) * 0.8,
+      vRot: (Math.random() - 0.5) * 0.005,
+      size: 9 + Math.random() * 20,
+      swayTime: Math.random() * 200,
+      swayAmp: 0.25 + Math.random() * 0.55,
+      swayFreq: 0.012 + Math.random() * 0.022,
+      alpha: 0,
+      fadeOut: false,
+      mirror: Math.random() > 0.5 ? 1 : -1
+    });
+  }
+}
+
+function fadeJoyAngelWings() {
+  joyAngelWings.forEach(w => { w.fadeOut = true; });
+}
+
+function drawAngelWing(wing) {
+  const s = wing.size;
+  const flap = Math.sin(wing.swayTime * wing.swayFreq) * wing.swayAmp;
+  ctx.save();
+  ctx.translate(wing.x, wing.y);
+  ctx.rotate(wing.rot + flap * 0.1);
+  ctx.scale(wing.mirror, 1);
+  ctx.globalAlpha = wing.alpha * 0.7;
+
+  const g = ctx.createLinearGradient(-s * 0.2, -s * 0.5, s, s * 0.5);
+  g.addColorStop(0, 'rgba(255, 250, 245, 0)');
+  g.addColorStop(0.3, 'rgba(255, 248, 238, 0.82)');
+  g.addColorStop(0.65, 'rgba(255, 235, 215, 0.5)');
+  g.addColorStop(1, 'rgba(255, 220, 195, 0)');
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(s * 0.45, -s * 0.42 + flap, s * 1.15, -s * 0.08);
+  ctx.quadraticCurveTo(s * 0.7, s * 0.5, s * 0.22, s * 0.58);
+  ctx.quadraticCurveTo(s * 0.04, s * 0.22, 0, 0);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  ctx.globalAlpha = wing.alpha * 0.35;
+  ctx.strokeStyle = 'rgba(255, 245, 230, 0.55)';
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function updateJoyAngelWings() {
+  if (joyAngelWings.length === 0) return;
+  joyAngelWings.forEach(w => {
+    w.swayTime++;
+    w.alpha = w.fadeOut
+      ? Math.max(0, w.alpha - 0.011)
+      : Math.min(0.78, w.alpha + 0.014);
+    w.x += w.vx + Math.sin(w.swayTime * w.swayFreq) * w.swayAmp;
+    w.y += w.vy;
+    w.rot += w.vRot;
+    drawAngelWing(w);
+  });
+  joyAngelWings = joyAngelWings.filter(w => !(w.fadeOut && w.alpha <= 0) && w.y > -100);
+}
 
 function startJoyLaceCurtains() {
   joyLaceCurtains = [];
   joyLaceTime = 0;
+  startJoyAngelWings();
   const W = laserCanvas.width;
   const H = laserCanvas.height;
   const count = 4;
@@ -1491,7 +1569,8 @@ function startJoyLaceCurtains() {
       width: lineW,
       extendLen: 0,
       maxLen: H * 1.1,
-      extendSpeed: 2.0 + Math.random() * 0.9,
+      extendSpeed: 0.9 + Math.random() * 2.6,
+      startDelay: Math.floor(20 + i * 35 + Math.random() * 90),
       wavePhase: Math.random() * Math.PI * 2,
       waveSpeed: 0.004 + Math.random() * 0.003,
       swayAmp: 11 + Math.random() * 9,
@@ -1504,6 +1583,7 @@ function startJoyLaceCurtains() {
 
 function fadeJoyLaceCurtains() {
   joyLaceCurtains.forEach(c => { c.fadeOut = true; });
+  fadeJoyAngelWings();
 }
 
 function drawJoyLacePanel(ctx, panel, time, H) {
@@ -2071,15 +2151,19 @@ function drawLasers() {
     joyLaceCurtains.forEach(c => {
       c.alpha = c.fadeOut
         ? Math.max(0, c.alpha - 0.01)
-        : Math.min(0.38, c.alpha + 0.018);
+        : c.startDelay > 0
+          ? c.alpha
+          : Math.min(0.38, c.alpha + 0.018);
 
-      if (!c.fadeOut && c.extendLen < c.maxLen) {
+      if (c.startDelay > 0) {
+        c.startDelay--;
+      } else if (!c.fadeOut && c.extendLen < c.maxLen) {
         c.extendLen = Math.min(c.maxLen, c.extendLen + c.extendSpeed);
       }
 
       c.wavePhase += c.waveSpeed * 0.18;
 
-      if (c.alpha <= 0) return;
+      if (c.alpha <= 0 || c.startDelay > 0) return;
       drawJoyLacePanel(laserCtx, c, joyLaceTime, H);
     });
     joyLaceCurtains = joyLaceCurtains.filter(c => !(c.fadeOut && c.alpha <= 0));
@@ -2435,6 +2519,8 @@ async function release() {
     sorrowBirds = [];
     hopePetals = [];
     joyLaceCurtains = [];
+    joyAngelWings = [];
+    joyAngelWings = [];
     resetLonelinessScene();
     resetGratitudeScene();
   }, inputReadyAt);
