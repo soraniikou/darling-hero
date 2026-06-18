@@ -1675,19 +1675,6 @@ function drawJoyLacePanel(ctx, panel, time, H) {
   ctx.fillStyle = widthGloss;
   ctx.fillRect(pX - panel.swayAmp * 2, 0, pW + panel.swayAmp * 4, ribbonLen);
 
-  // 流れるハイライト（光沢のきらめき）
-  for (let band = 0; band < 2; band++) {
-    const shimmerT = (time * 0.65 + band * 0.48 + panel.wavePhase * 0.08) % 1;
-    const bandY = ribbonLen * shimmerT;
-    const bandGrad = ctx.createLinearGradient(pX - panel.swayAmp, bandY - 10, pX + pW + panel.swayAmp, bandY + 10);
-    bandGrad.addColorStop(0, 'rgba(255,255,255,0)');
-    bandGrad.addColorStop(0.45, `rgba(255,255,255,${0.18 * alpha})`);
-    bandGrad.addColorStop(0.55, `rgba(255,255,255,${0.28 * alpha})`);
-    bandGrad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = bandGrad;
-    ctx.fillRect(pX - panel.swayAmp * 2, bandY - 14, pW + panel.swayAmp * 4, 28);
-  }
-
   ctx.restore();
 }
 
