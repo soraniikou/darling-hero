@@ -1467,32 +1467,29 @@ function spawnJoyRibbons() {
   const H = laserCanvas.height;
   const cx = W / 2;
   const cy = H / 2;
-  const baseAngles = [
-    -Math.PI / 2,
-    Math.PI / 2,
-    Math.PI,
-    0,
-    -Math.PI / 4
+  const ribbonConfigs = [
+    { angle: -Math.PI / 2, color: { r: 255, g: 105, b: 180 } },
+    { angle: Math.PI / 2,  color: { r: 255, g: 130, b: 195 } },
+    { angle: Math.PI,      color: { r: 255, g: 220, b: 75  } },
+    { angle: 0,            color: { r: 120, g: 215, b: 255 } },
+    { angle: -Math.PI / 4,  color: { r: 95,  g: 220, b: 135 } }
   ];
-  baseAngles.forEach(baseAngle => {
-    for (let i = 0; i < 7; i++) {
-      const angle = baseAngle + (Math.random() - 0.5) * 0.35;
-      const edgeDist = Math.max(W, H) * (0.52 + Math.random() * 0.08);
-      joyRibbons.push({
-        x: cx + Math.cos(angle) * edgeDist,
-        y: cy + Math.sin(angle) * edgeDist,
-        angle,
-        speed: 0.55 + Math.random() * 0.45,
-        flutter: Math.random() * Math.PI * 2,
-        flutterSpeed: 0.06 + Math.random() * 0.05,
-        rot: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.04,
-        size: 10 + Math.random() * 8,
-        alpha: 0,
-        fadeOut: false,
-        hueShift: Math.random() * 24 - 12
-      });
-    }
+  ribbonConfigs.forEach(cfg => {
+    const angle = cfg.angle + (Math.random() - 0.5) * 0.12;
+    const edgeDist = Math.max(W, H) * (0.54 + Math.random() * 0.06);
+    joyRibbons.push({
+      x: cx + Math.cos(angle) * edgeDist,
+      y: cy + Math.sin(angle) * edgeDist,
+      angle,
+      color: cfg.color,
+      speed: 0.6 + Math.random() * 0.35,
+      flutter: Math.random() * Math.PI * 2,
+      flutterSpeed: 0.07 + Math.random() * 0.04,
+      length: 95 + Math.random() * 45,
+      width: 11 + Math.random() * 4,
+      alpha: 0,
+      fadeOut: false
+    });
   });
 }
 
@@ -1500,32 +1497,47 @@ function fadeJoyRibbons() {
   joyRibbons.forEach(r => { r.fadeOut = true; });
 }
 
-function drawJoyRibbonShape(ctx, size, alpha, hueShift) {
-  const r = 255;
-  const g = 118 + hueShift;
-  const b = 172 + hueShift * 0.4;
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.92})`;
-  ctx.shadowColor = `rgba(255, 90, 150, ${alpha * 0.55})`;
-  ctx.shadowBlur = 10;
+function drawLongJoyRibbon(ctx, length, width, alpha, color, flutter) {
+  const segs = 22;
+  const hw = width * 0.5;
+  const { r, g, b } = color;
+
   ctx.beginPath();
-  ctx.ellipse(-size * 0.32, -size * 0.05, size * 0.38, size * 0.28, -0.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(size * 0.32, -size * 0.05, size * 0.38, size * 0.28, 0.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(0, 0, size * 0.12, size * 0.15, 0, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(${r}, ${g - 18}, ${b - 18}, ${alpha})`;
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-size * 0.08, size * 0.12);
-  ctx.quadraticCurveTo(-size * 0.28, size * 0.58, -size * 0.38, size * 0.88);
-  ctx.lineTo(-size * 0.04, size * 0.72);
-  ctx.lineTo(size * 0.04, size * 0.72);
-  ctx.quadraticCurveTo(size * 0.28, size * 0.58, size * 0.08, size * 0.12);
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs;
+    const x = -t * length;
+    const wave = Math.sin(t * Math.PI * 5 + flutter) * width * 0.62;
+    const y = -hw + wave;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  for (let i = segs; i >= 0; i--) {
+    const t = i / segs;
+    const x = -t * length;
+    const wave = Math.sin(t * Math.PI * 5 + flutter + 0.85) * width * 0.62;
+    const y = hw + wave;
+    ctx.lineTo(x, y);
+  }
   ctx.closePath();
-  ctx.fillStyle = `rgba(${r}, ${g + 10}, ${b + 10}, ${alpha * 0.88})`;
+
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.9})`;
+  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.45})`;
+  ctx.shadowBlur = 10;
   ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.35})`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs;
+    const x = -t * length;
+    const wave = Math.sin(t * Math.PI * 5 + flutter + 0.42) * width * 0.35;
+    const y = wave * 0.25;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
 }
 
 // ============================================================
@@ -2067,22 +2079,21 @@ function drawLasers() {
       }
 
       r.flutter += r.flutterSpeed;
-      r.rot += r.rotSpeed;
 
       if (r.alpha <= 0) return;
 
       const px = -dy / dist;
       const py = dx / dist;
-      const flutterOff = Math.sin(r.flutter) * r.size * 0.48;
+      const flutterOff = Math.sin(r.flutter) * r.width * 1.6;
       const drawX = r.x + px * flutterOff;
       const drawY = r.y + py * flutterOff;
-      const drawAngle = Math.atan2(dy, dx) + Math.PI + Math.sin(r.flutter * 0.7) * 0.3;
+      const drawAngle = Math.atan2(dy, dx) + Math.sin(r.flutter * 0.65) * 0.22;
 
       laserCtx.save();
       laserCtx.translate(drawX, drawY);
-      laserCtx.rotate(drawAngle + r.rot * 0.15);
+      laserCtx.rotate(drawAngle);
       laserCtx.globalAlpha = r.alpha;
-      drawJoyRibbonShape(laserCtx, r.size, r.alpha, r.hueShift);
+      drawLongJoyRibbon(laserCtx, r.length, r.width, r.alpha, r.color, r.flutter);
       laserCtx.restore();
     });
     joyRibbons = joyRibbons.filter(r => !(r.fadeOut && r.alpha <= 0));
