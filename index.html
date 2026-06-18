@@ -1512,35 +1512,38 @@ function fadeJoyAngelWings() {
 function drawAngelWing(wing) {
   const s = wing.size;
   const flap = Math.sin(wing.swayTime * wing.swayFreq) * wing.swayAmp;
-  const tipX = s * 0.92;
-  const tipY = -s * 1.08 + flap * 0.14;
+  const tipX = s * 0.82;
+  const tipY = -s * 0.92 + flap * 0.12;
   ctx.save();
   ctx.translate(wing.x, wing.y);
   ctx.rotate(wing.rot + flap * 0.08);
   ctx.scale(wing.mirror, 1);
   ctx.globalAlpha = wing.alpha * 0.72;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
-  const g = ctx.createLinearGradient(0, s * 0.08, tipX * 0.7, tipY);
+  const g = ctx.createLinearGradient(0, s * 0.1, tipX * 0.65, tipY);
   g.addColorStop(0, 'rgba(245, 240, 232, 0.15)');
   g.addColorStop(0.25, 'rgba(255, 250, 242, 0.88)');
   g.addColorStop(0.55, 'rgba(255, 242, 228, 0.72)');
   g.addColorStop(0.85, 'rgba(255, 232, 210, 0.45)');
   g.addColorStop(1, 'rgba(255, 220, 195, 0.08)');
 
-  // 羽軸（クイル）から先端へ広がる本物に近い羽形
+  // 少し丸みを帯びた羽形
   ctx.beginPath();
-  ctx.moveTo(0, s * 0.06);
+  ctx.moveTo(0, s * 0.1);
   ctx.bezierCurveTo(
-    s * 0.42, -s * 0.18 + flap * 0.1,
-    s * 0.78, -s * 0.82 + flap * 0.12,
-    tipX, tipY
+    s * 0.52, -s * 0.08 + flap * 0.08,
+    s * 0.82, -s * 0.52 + flap * 0.1,
+    tipX * 0.72, tipY + s * 0.18
   );
+  ctx.quadraticCurveTo(tipX + s * 0.06, tipY, tipX * 0.68, tipY + s * 0.22);
   ctx.bezierCurveTo(
-    s * 0.58, -s * 0.62 + flap * 0.08,
-    s * 0.22, -s * 0.28 + flap * 0.05,
-    s * 0.04, s * 0.02
+    s * 0.55, -s * 0.38 + flap * 0.07,
+    s * 0.28, -s * 0.08 + flap * 0.04,
+    s * 0.1, s * 0.06
   );
-  ctx.quadraticCurveTo(s * 0.01, s * 0.05, 0, s * 0.06);
+  ctx.quadraticCurveTo(s * 0.02, s * 0.1, 0, s * 0.1);
   ctx.closePath();
   ctx.fillStyle = g;
   ctx.fill();
@@ -1548,8 +1551,8 @@ function drawAngelWing(wing) {
   // 羽軸（ラキス）
   ctx.globalAlpha = wing.alpha * 0.5;
   ctx.beginPath();
-  ctx.moveTo(0, s * 0.06);
-  ctx.quadraticCurveTo(s * 0.38, -s * 0.48 + flap * 0.1, tipX, tipY);
+  ctx.moveTo(0, s * 0.1);
+  ctx.quadraticCurveTo(s * 0.4, -s * 0.42 + flap * 0.09, tipX * 0.75, tipY + s * 0.08);
   ctx.strokeStyle = 'rgba(220, 210, 195, 0.65)';
   ctx.lineWidth = Math.max(0.35, s * 0.04);
   ctx.stroke();
@@ -1560,16 +1563,16 @@ function drawAngelWing(wing) {
   ctx.lineWidth = 0.35;
   for (let i = 1; i <= 5; i++) {
     const t = i / 6;
-    const bx = s * 0.08 + (tipX - s * 0.08) * t;
-    const by = s * 0.04 + (tipY - s * 0.04) * t + flap * 0.06 * t;
-    const barbLen = s * (0.22 - t * 0.1);
+    const bx = s * 0.1 + (tipX * 0.75 - s * 0.1) * t;
+    const by = s * 0.08 + (tipY - s * 0.08) * t + flap * 0.05 * t;
+    const barbLen = s * (0.2 - t * 0.08);
     ctx.beginPath();
     ctx.moveTo(bx, by);
-    ctx.lineTo(bx + barbLen * 0.85, by - barbLen * 0.35);
+    ctx.quadraticCurveTo(bx + barbLen * 0.5, by - barbLen * 0.28, bx + barbLen * 0.82, by - barbLen * 0.32);
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(bx, by);
-    ctx.lineTo(bx + barbLen * 0.45, by + barbLen * 0.28);
+    ctx.quadraticCurveTo(bx + barbLen * 0.3, by + barbLen * 0.18, bx + barbLen * 0.42, by + barbLen * 0.24);
     ctx.stroke();
   }
 
@@ -1659,8 +1662,32 @@ function drawJoyLacePanel(ctx, panel, time, H) {
 
   ctx.save();
   ctx.fillStyle = `hsla(${hBase % 360}, ${sat}%, ${lit}%, ${fillA})`;
-  ctx.shadowBlur = 0;
   ctx.fill();
+  ctx.clip();
+
+  // 幅方向のサテン光沢
+  const widthGloss = ctx.createLinearGradient(pX, 0, pX + pW, 0);
+  widthGloss.addColorStop(0, `hsla(${hBase % 360}, ${sat}%, ${lit + 8}%, 0)`);
+  widthGloss.addColorStop(0.22, `hsla(${(hBase + 18) % 360}, ${sat + 6}%, ${lit + 26}%, ${0.32 * alpha})`);
+  widthGloss.addColorStop(0.48, `hsla(${(hBase + 32) % 360}, 92%, 74%, ${0.48 * alpha})`);
+  widthGloss.addColorStop(0.72, `hsla(${(hBase + 14) % 360}, ${sat + 4}%, ${lit + 20}%, ${0.22 * alpha})`);
+  widthGloss.addColorStop(1, `hsla(${hBase % 360}, ${sat}%, ${lit}%, 0)`);
+  ctx.fillStyle = widthGloss;
+  ctx.fillRect(pX - panel.swayAmp * 2, 0, pW + panel.swayAmp * 4, ribbonLen);
+
+  // 流れるハイライト（光沢のきらめき）
+  for (let band = 0; band < 2; band++) {
+    const shimmerT = (time * 0.65 + band * 0.48 + panel.wavePhase * 0.08) % 1;
+    const bandY = ribbonLen * shimmerT;
+    const bandGrad = ctx.createLinearGradient(pX - panel.swayAmp, bandY - 10, pX + pW + panel.swayAmp, bandY + 10);
+    bandGrad.addColorStop(0, 'rgba(255,255,255,0)');
+    bandGrad.addColorStop(0.45, `rgba(255,255,255,${0.18 * alpha})`);
+    bandGrad.addColorStop(0.55, `rgba(255,255,255,${0.28 * alpha})`);
+    bandGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = bandGrad;
+    ctx.fillRect(pX - panel.swayAmp * 2, bandY - 14, pW + panel.swayAmp * 4, 28);
+  }
+
   ctx.restore();
 }
 
