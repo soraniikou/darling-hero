@@ -1091,7 +1091,7 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-const TRI_COLORS = ['#7c2d12', '#831843', '#3d2817', '#1e1b4b'];
+const TRI_COLORS = ['#8ebfd4', '#a8d4e8', '#9eb89a', '#b8cdb2'];
 const triMarks = [];
 for (let i = 0; i < 17; i++) {
   triMarks.push({
@@ -1250,7 +1250,15 @@ function loop() {
   const mb = mirrorBallBlend;
   const skyMul = gratitudeScene.active ? (1 - gratitudeScene.skyAlpha * 0.92) : 1;
   const trailA = Math.max(0.15, 0.18 * (1 - mb * 0.9)) * (gratitudeScene.active ? Math.max(0.08, 1 - gratitudeScene.skyAlpha * 0.88) : 1);
-  ctx.fillStyle = `rgba(8,6,16,${trailA})`;
+  if (mb < 0.05) {
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, `rgba(22, 48, 68, ${trailA * 0.92})`);
+    bgGrad.addColorStop(0.45, `rgba(18, 38, 44, ${trailA})`);
+    bgGrad.addColorStop(1, `rgba(24, 52, 46, ${trailA * 0.92})`);
+    ctx.fillStyle = bgGrad;
+  } else {
+    ctx.fillStyle = `rgba(8,6,16,${trailA})`;
+  }
   ctx.fillRect(0, 0, W, H);
 
   updateGratitudeScene();
@@ -1291,8 +1299,8 @@ function loop() {
     const g = ctx.createLinearGradient(sx - s, sy - s, sx + s, sy + s);
     g.addColorStop(0, tr.color);
     g.addColorStop(0.4, tr.color);
-    g.addColorStop(0.7, 'rgba(255, 216, 107, 0.2)');
-    g.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+    g.addColorStop(0.72, 'rgba(168, 210, 228, 0.22)');
+    g.addColorStop(1, 'rgba(184, 205, 178, 0.14)');
     ctx.fillStyle = g;
     ctx.fill();
     ctx.restore();
