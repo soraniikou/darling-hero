@@ -1495,7 +1495,7 @@ function spawnStillnessStars() {
     stillnessStars.push({
       x: Math.random() * W,
       y: H + Math.random() * 90,
-      vy: -(0.32 + Math.random() * 0.78),
+      vy: -(0.64 + Math.random() * 1.56),
       rot: Math.random() * Math.PI * 2,
       vRot: (Math.random() - 0.5) * 0.018,
       size: 6 + Math.random() * 11,
@@ -2275,13 +2275,11 @@ function drawLasers() {
       laserCtx.translate(s.x, s.y);
       laserCtx.rotate(s.rot);
       laserCtx.globalAlpha = s.alpha;
-      laserCtx.filter = 'blur(5px)';
-      laserCtx.shadowColor = `rgba(${s.r}, ${s.g}, ${s.b}, 0.55)`;
-      laserCtx.shadowBlur = 16;
-      laserCtx.fillStyle = `rgba(${s.r}, ${s.g}, ${s.b}, ${s.alpha * 0.85})`;
+      laserCtx.shadowColor = `rgba(${s.r}, ${s.g}, ${s.b}, 0.75)`;
+      laserCtx.shadowBlur = 8;
+      laserCtx.fillStyle = `rgba(${s.r}, ${s.g}, ${s.b}, ${s.alpha})`;
       drawStillnessStarShape(laserCtx, s.size, 0);
       laserCtx.fill();
-      laserCtx.filter = 'none';
       laserCtx.restore();
     });
     stillnessStars = stillnessStars.filter(s => !(s.fadeOut && s.alpha <= 0));
