@@ -787,7 +787,8 @@ const PHASES = {
     burstSpeed: [0.6, 1.8],
     burstGravity: 0.015,
     burstUpward: false,
-    glowColor: '#ffd86b'
+    glowColor: '#ffd86b',
+    starRise: true
   }
 };
 
@@ -1472,6 +1473,58 @@ function spawnHopePetals() {
 
 function fadeHopePetals() {
   hopePetals.forEach(p => { p.fadeOut = true; });
+}
+
+// ============================================================
+// Stillness 星システム（shizu フェーズ専用・他の感情に影響しない）
+// ============================================================
+const STILLNESS_STAR_COLORS = [
+  { r: 168, g: 235, b: 210 }, // ミントグリーン
+  { r: 255, g: 244, b: 168 }, // シャーベットイエロー
+  { r: 255, g: 200, b: 220 }  // あわいピンク
+];
+let stillnessStars = [];
+
+function spawnStillnessStars() {
+  stillnessStars = [];
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const count = 50 + Math.floor(Math.random() * 18);
+  for (let i = 0; i < count; i++) {
+    const col = STILLNESS_STAR_COLORS[Math.floor(Math.random() * STILLNESS_STAR_COLORS.length)];
+    stillnessStars.push({
+      x: Math.random() * W,
+      y: H + Math.random() * 90,
+      vy: -(0.32 + Math.random() * 0.78),
+      rot: Math.random() * Math.PI * 2,
+      vRot: (Math.random() - 0.5) * 0.018,
+      size: 3 + Math.random() * 5.5,
+      swayTime: Math.random() * 200,
+      swayAmp: 0.22 + Math.random() * 0.38,
+      swayFreq: 0.011 + Math.random() * 0.013,
+      r: col.r, g: col.g, b: col.b,
+      alpha: 0,
+      startDelay: Math.floor(Math.random() * 140),
+      fadeOut: false
+    });
+  }
+}
+
+function fadeStillnessStars() {
+  stillnessStars.forEach(s => { s.fadeOut = true; });
+}
+
+function drawStillnessStarShape(ctx, size, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const r = i % 2 === 0 ? size : size * 0.4;
+    const a = rot + (i / 8) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(a) * r;
+    const y = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
 }
 
 // ============================================================
@@ -2195,6 +2248,43 @@ function drawLasers() {
     hopePetals = hopePetals.filter(p => !(p.fadeOut && p.alpha <= 0));
   }
 
+  // ── Stillness の星（shizu 以外では stillnessStars が空なので何もしない）──
+  if (stillnessStars.length > 0) {
+    const CW = laserCanvas.width;
+    const CH = laserCanvas.height;
+    stillnessStars.forEach(s => {
+      if (s.startDelay > 0) { s.startDelay--; return; }
+
+      s.alpha = s.fadeOut
+        ? Math.max(0, s.alpha - 0.008)
+        : Math.min(0.9, s.alpha + 0.02);
+
+      s.swayTime++;
+      s.x += Math.sin(s.swayTime * s.swayFreq) * s.swayAmp;
+      s.y += s.vy;
+      s.rot += s.vRot;
+
+      if (s.y < -30) {
+        s.y = CH + 10 + Math.random() * 50;
+        s.x = Math.random() * CW;
+      }
+
+      if (s.alpha <= 0) return;
+
+      laserCtx.save();
+      laserCtx.translate(s.x, s.y);
+      laserCtx.rotate(s.rot);
+      laserCtx.globalAlpha = s.alpha;
+      laserCtx.shadowColor = `rgba(${s.r}, ${s.g}, ${s.b}, 0.7)`;
+      laserCtx.shadowBlur = 10;
+      laserCtx.fillStyle = `rgba(${s.r}, ${s.g}, ${s.b}, ${s.alpha})`;
+      drawStillnessStarShape(laserCtx, s.size, 0);
+      laserCtx.fill();
+      laserCtx.restore();
+    });
+    stillnessStars = stillnessStars.filter(s => !(s.fadeOut && s.alpha <= 0));
+  }
+
   // ── Joy レースカーテン（yorokobi 以外では joyLaceCurtains が空なので何もしない）──
   if (joyLaceCurtains.length > 0) {
     joyLaceTime += 0.007;
@@ -2453,15 +2543,16 @@ async function release() {
   phaseNameEl.classList.toggle('phase-name--sorrow', phase.name === 'Sorrow');
   setTimeout(() => phaseNameEl.classList.add('show'), 200);
 
-  // レーザー発射（swayFall・petalBurst・skyScene・laceCurtain 以外）
-  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain) startLaserBurst(phase);
+  // レーザー発射（swayFall・petalBurst・skyScene・laceCurtain・starRise 以外）
+  if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain && !phase.starRise) startLaserBurst(phase);
 
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
     if (phase.petalBurst) spawnHopePetals();
     if (phase.laceCurtain) startJoyLaceCurtains();
-    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
+    if (phase.starRise) spawnStillnessStars();
+    if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain && !phase.starRise) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
     heroBrightness = 0.5;
   }, Math.min(2200, phase.laserDuration * 0.45));
 
@@ -2509,6 +2600,7 @@ async function release() {
   setTimeout(() => {
     fadeSorrowBirds();
     fadeHopePetals();
+    fadeStillnessStars();
     fadeJoyLaceCurtains();
     stopLonelinessScene();
     stopGratitudeScene();
@@ -2569,6 +2661,7 @@ async function release() {
     cachedText = '';
     sorrowBirds = [];
     hopePetals = [];
+    stillnessStars = [];
     joyLaceCurtains = [];
     joyAngelWings = [];
     joyAngelWings = [];
