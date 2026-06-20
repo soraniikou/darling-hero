@@ -1323,6 +1323,7 @@ function loop() {
   }
   drawMirrorSoapBubbles(bubbleBlend);
   drawGratitudeContrails();
+  updateStillnessCandleScene();
 
   heroSparkles = heroSparkles.filter(s => s.life > 0);
   heroSparkles.forEach(s => {
@@ -1527,6 +1528,102 @@ function respawnStillnessStar(s, CW, CH) {
 
 function fadeStillnessStars() {
   stillnessStars.forEach(s => { s.fadeOut = true; });
+}
+
+// ============================================================
+// Stillness ロウソク（shizu・ラストメッセージ以降）
+// ============================================================
+let stillnessCandleScene = { active: false, alpha: 0, fadeOut: false, flickerPhase: 0 };
+
+function startStillnessCandleScene() {
+  stillnessCandleScene.active = true;
+  stillnessCandleScene.alpha = 0;
+  stillnessCandleScene.fadeOut = false;
+  stillnessCandleScene.flickerPhase = 0;
+}
+
+function fadeStillnessCandleScene() {
+  stillnessCandleScene.fadeOut = true;
+}
+
+function resetStillnessCandleScene() {
+  stillnessCandleScene.active = false;
+  stillnessCandleScene.alpha = 0;
+  stillnessCandleScene.fadeOut = false;
+  stillnessCandleScene.flickerPhase = 0;
+}
+
+function drawStillnessCandle(ctx, cx, baseY, candleH, candleW, alpha, flicker) {
+  const flameH = candleH * 0.24 * (0.9 + flicker * 0.14);
+  const flameY = baseY - candleH - 5;
+  ctx.save();
+
+  // 炎のぼんやりした光
+  ctx.globalAlpha = alpha * 0.18;
+  const glow = ctx.createRadialGradient(cx, flameY - flameH * 0.35, 0, cx, flameY, flameH * 2.8);
+  glow.addColorStop(0, 'rgba(255, 220, 150, 0.45)');
+  glow.addColorStop(1, 'rgba(255, 180, 90, 0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(cx, flameY - flameH * 0.35, flameH * 2.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ろうそく本体
+  ctx.globalAlpha = alpha * 0.32;
+  const bodyGrad = ctx.createLinearGradient(cx - candleW, baseY - candleH, cx + candleW, baseY);
+  bodyGrad.addColorStop(0, 'rgba(210, 190, 165, 0.55)');
+  bodyGrad.addColorStop(0.5, 'rgba(240, 225, 205, 0.7)');
+  bodyGrad.addColorStop(1, 'rgba(195, 175, 155, 0.5)');
+  ctx.fillStyle = bodyGrad;
+  ctx.fillRect(cx - candleW, baseY - candleH, candleW * 2, candleH);
+
+  // 芯
+  ctx.globalAlpha = alpha * 0.38;
+  ctx.fillStyle = 'rgba(55, 45, 38, 0.55)';
+  ctx.fillRect(cx - 0.6, baseY - candleH - 4, 1.2, 5);
+
+  // 炎
+  ctx.globalAlpha = alpha * 0.42;
+  const fg = ctx.createRadialGradient(cx, flameY - flameH * 0.35, 0, cx, flameY, flameH);
+  fg.addColorStop(0, 'rgba(255, 248, 210, 0.85)');
+  fg.addColorStop(0.45, 'rgba(255, 205, 110, 0.45)');
+  fg.addColorStop(1, 'rgba(255, 160, 60, 0)');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  ctx.ellipse(cx, flameY - flameH * 0.42, candleW * 0.75, flameH, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function updateStillnessCandleScene() {
+  if (!stillnessCandleScene.active) return;
+  stillnessCandleScene.flickerPhase += 0.06;
+  stillnessCandleScene.alpha = stillnessCandleScene.fadeOut
+    ? Math.max(0, stillnessCandleScene.alpha - 0.005)
+    : Math.min(0.5, stillnessCandleScene.alpha + 0.006);
+
+  if (stillnessCandleScene.alpha <= 0) {
+    if (stillnessCandleScene.fadeOut) stillnessCandleScene.active = false;
+    return;
+  }
+
+  const positions = [0.28, 0.5, 0.72];
+  const baseY = H * 0.8;
+  const candleH = H * 0.1;
+  const candleW = W * 0.013;
+  positions.forEach((xr, i) => {
+    const flick = Math.sin(stillnessCandleScene.flickerPhase + i * 1.35) * 0.5 + 0.5;
+    drawStillnessCandle(
+      ctx,
+      W * xr,
+      baseY,
+      candleH * (0.9 + i * 0.07),
+      candleW,
+      stillnessCandleScene.alpha,
+      flick
+    );
+  });
 }
 
 function drawStillnessStarShape(ctx, size, rot) {
@@ -2603,6 +2700,10 @@ async function release() {
     heroFarewellEl.classList.toggle('hero-farewell--pink',  isPinkPhase);
     heroFarewellEl.classList.toggle('hero-farewell--dark-blue', isGratitude);
     heroFarewellEl.classList.toggle('hero-farewell--loneliness-navy', isLoneliness);
+    if (phase.starRise) {
+      fadeStillnessStars();
+      startStillnessCandleScene();
+    }
   }, heroLineShowAt + 5000);
 
   setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
@@ -2616,6 +2717,7 @@ async function release() {
     fadeSorrowBirds();
     fadeHopePetals();
     fadeStillnessStars();
+    fadeStillnessCandleScene();
     fadeJoyLaceCurtains();
     stopLonelinessScene();
     stopGratitudeScene();
@@ -2677,6 +2779,7 @@ async function release() {
     sorrowBirds = [];
     hopePetals = [];
     stillnessStars = [];
+    resetStillnessCandleScene();
     joyLaceCurtains = [];
     joyAngelWings = [];
     joyAngelWings = [];
