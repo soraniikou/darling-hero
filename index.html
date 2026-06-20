@@ -1332,6 +1332,7 @@ function loop() {
   }
   drawMirrorSoapBubbles(bubbleBlend);
   drawGratitudeContrails();
+  drawGratitudeBalloons();
   updateStillnessCandleScene();
 
   heroSparkles = heroSparkles.filter(s => s.life > 0);
@@ -1921,8 +1922,106 @@ let gratitudeScene = {
   fadeOut: false,
   bubbleAlpha: 0,
   skyAlpha: 0,
-  contrails: []
+  contrails: [],
+  balloons: []
 };
+
+const GRATITUDE_BALLOON_COLORS = [
+  { top: [255, 210, 120], bottom: [255, 168, 55] },   // マリーゴールドゴールド
+  { top: [255, 222, 238], bottom: [255, 188, 212], }, // ハピネスピンク
+  { top: [188, 242, 218], bottom: [148, 232, 198], }, // ミントグリーン
+  { top: [255, 218, 192], bottom: [255, 192, 158], }, // シフォンアプリコット
+  { top: [228, 208, 250], bottom: [204, 178, 240], }, // ライラックパープル
+  { top: [255, 198, 192], bottom: [255, 168, 158], }  // コーラルピンク
+];
+
+function spawnGratitudeBalloons() {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  gratitudeScene.balloons = [];
+  const count = 14 + Math.floor(Math.random() * 6);
+  for (let i = 0; i < count; i++) {
+    const col = GRATITUDE_BALLOON_COLORS[Math.floor(Math.random() * GRATITUDE_BALLOON_COLORS.length)];
+    gratitudeScene.balloons.push({
+      x: Math.random() * W,
+      y: H * (0.15 + Math.random() * 0.95),
+      vy: -(0.11 + Math.random() * 0.26),
+      size: 24 + Math.random() * 26,
+      swayTime: Math.random() * 200,
+      swayAmp: 0.35 + Math.random() * 0.65,
+      swayFreq: 0.007 + Math.random() * 0.009,
+      topR: col.top,
+      bottomR: col.bottom,
+      alpha: 0.72 + Math.random() * 0.08,
+      startDelay: Math.floor(Math.random() * 90)
+    });
+  }
+}
+
+function drawGratitudeBalloon(b, sceneAlpha) {
+  const a = b.alpha * sceneAlpha;
+  if (a <= 0) return;
+  const wobble = Math.sin(b.swayTime * b.swayFreq) * b.swayAmp;
+  const bx = b.x + wobble;
+  const rw = b.size * 0.72;
+  const rh = b.size;
+
+  ctx.save();
+  ctx.translate(bx, b.y);
+  ctx.globalAlpha = a;
+
+  const grad = ctx.createLinearGradient(-rw * 0.45, -rh * 0.55, rw * 0.55, rh * 0.65);
+  grad.addColorStop(0, `rgba(${b.topR[0]}, ${b.topR[1]}, ${b.topR[2]}, 0.78)`);
+  grad.addColorStop(0.5, `rgba(${(b.topR[0] + b.bottomR[0]) >> 1}, ${(b.topR[1] + b.bottomR[1]) >> 1}, ${(b.topR[2] + b.bottomR[2]) >> 1}, 0.75)`);
+  grad.addColorStop(1, `rgba(${b.bottomR[0]}, ${b.bottomR[1]}, ${b.bottomR[2]}, 0.72)`);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(0, -rh * 0.08, rw, rh * 0.88, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalAlpha = a * 0.38;
+  const hg = ctx.createRadialGradient(-rw * 0.28, -rh * 0.38, 0, -rw * 0.08, -rh * 0.12, rw * 0.55);
+  hg.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+  hg.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = hg;
+  ctx.beginPath();
+  ctx.ellipse(-rw * 0.22, -rh * 0.28, rw * 0.3, rh * 0.24, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalAlpha = a * 0.68;
+  ctx.fillStyle = `rgba(${b.bottomR[0]}, ${b.bottomR[1]}, ${b.bottomR[2]}, 0.62)`;
+  ctx.beginPath();
+  ctx.moveTo(-3.2, rh * 0.72);
+  ctx.lineTo(0, rh * 0.93);
+  ctx.lineTo(3.2, rh * 0.72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${b.bottomR[0]}, ${b.bottomR[1]}, ${b.bottomR[2]}, 0.38)`;
+  ctx.lineWidth = 0.75;
+  ctx.beginPath();
+  ctx.moveTo(0, rh * 0.93);
+  ctx.quadraticCurveTo(5, rh * 1.12, -2, rh * 1.32);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawGratitudeBalloons() {
+  if (!gratitudeScene.active || gratitudeScene.skyAlpha <= 0.05) return;
+  const CW = W;
+  const CH = H;
+  gratitudeScene.balloons.forEach(b => {
+    if (b.startDelay > 0) { b.startDelay--; return; }
+    b.swayTime++;
+    b.y += b.vy;
+    b.x += Math.sin(b.swayTime * b.swayFreq * 0.7 + 1.2) * 0.06;
+    if (b.y < -b.size * 2.2) {
+      b.y = CH + b.size + Math.random() * CH * 0.25;
+      b.x = Math.random() * CW;
+    }
+    drawGratitudeBalloon(b, gratitudeScene.skyAlpha);
+  });
+}
 
 function startGratitudeScene() {
   const W = window.innerWidth;
@@ -1947,6 +2046,7 @@ function startGratitudeScene() {
   gratitudeScene.bubbleAlpha = 1;
   gratitudeScene.skyAlpha = 0;
   isGratitudePhase = true;
+  spawnGratitudeBalloons();
 }
 
 function stopGratitudeScene() {
@@ -1960,6 +2060,7 @@ function resetGratitudeScene() {
   gratitudeScene.bubbleAlpha = 0;
   gratitudeScene.skyAlpha = 0;
   gratitudeScene.contrails = [];
+  gratitudeScene.balloons = [];
   isGratitudePhase = false;
 }
 
