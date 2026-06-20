@@ -15,7 +15,7 @@
 
 <!-- びっくりマーク！スクショ 6月14日 -->
 <img src="スクリーンショット%202026-06-14%20225258.png" width="100%" alt="screenshot">
-
+<img src="kodoku.png" width="100%" alt="kodoku">
 
 ♪アプリ体験　♫
 https://darling-hero.vercel.app
