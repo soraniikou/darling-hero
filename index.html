@@ -1939,7 +1939,7 @@ function spawnGratitudeBalloons() {
   const W = window.innerWidth;
   const H = window.innerHeight;
   gratitudeScene.balloons = [];
-  const count = 14 + Math.floor(Math.random() * 6);
+  const count = 7 + Math.floor(Math.random() * 3);
   for (let i = 0; i < count; i++) {
     const col = GRATITUDE_BALLOON_COLORS[Math.floor(Math.random() * GRATITUDE_BALLOON_COLORS.length)];
     gratitudeScene.balloons.push({
