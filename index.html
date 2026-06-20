@@ -2808,18 +2808,21 @@ async function release() {
   const isLoneliness = phase.name === 'Loneliness';
   const isGratitude  = phase.name === 'Gratitude';
   const isJoy        = phaseKey === 'yorokobi';
+  const isAnger      = phaseKey === 'ikari';
   if (isLoneliness) startLonelinessScene();
   setTimeout(() => {
     releaseBtn.classList.add('release-btn--hidden-cinematic');
     if (!isGratitude) beginMirrorBallBackgroundTransition();
-    heroLineEl.classList.toggle('hero-line--joy', isJoy);
-    heroLineEl.classList.toggle('hero-line--navy',  isNavyPhase);
-    heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
-    heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
-    heroLineEl.classList.toggle('hero-line--dark-blue', isGratitude);
-    heroLineEl.classList.toggle('hero-line--loneliness-navy', isLoneliness);
-    heroLineEl.classList.toggle('hero-line--large', isLoneliness);
-    startHeroLineWordReveal(heroLineEl, heroLineText);
+    if (!isAnger) {
+      heroLineEl.classList.toggle('hero-line--joy', isJoy);
+      heroLineEl.classList.toggle('hero-line--navy',  isNavyPhase);
+      heroLineEl.classList.toggle('hero-line--green', isGreenPhase);
+      heroLineEl.classList.toggle('hero-line--pink',  isPinkPhase);
+      heroLineEl.classList.toggle('hero-line--dark-blue', isGratitude);
+      heroLineEl.classList.toggle('hero-line--loneliness-navy', isLoneliness);
+      heroLineEl.classList.toggle('hero-line--large', isLoneliness);
+      startHeroLineWordReveal(heroLineEl, heroLineText);
+    }
   }, heroLineShowAt);
 
   setTimeout(() => {
