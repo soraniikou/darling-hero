@@ -6,7 +6,7 @@
 <title>Darling Hero</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Pinyon+Script&family=Great+Vibes&family=Allura&family=Noto+Serif+JP:wght@200;300;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Pinyon+Script&family=Great+Vibes&family=Allura&family=Dancing+Script:wght@400;700&family=Parisienne&family=Noto+Serif+JP:wght@200;300;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --black: #050508;
@@ -436,6 +436,10 @@
     vertical-align: baseline;
     font-size: 0.8em;
   }
+  .hero-line .script-readable-i,
+  .hero-farewell .script-readable-i {
+    font-family: 'Dancing Script', 'Parisienne', cursive;
+  }
   /* Loneliness 専用：2倍サイズ・折り返し許可 */
   .hero-line--large {
     font-size: clamp(3.584rem, 8.96vw, 5.632rem);
@@ -864,6 +868,20 @@ function clearHeroLineTimers() {
   heroLineTimeouts = [];
 }
 
+function appendReadableCapitalIText(container, text) {
+  text.split(/(I)/).forEach(part => {
+    if (!part) return;
+    if (part === 'I') {
+      const iSpan = document.createElement('span');
+      iSpan.className = 'script-readable-i';
+      iSpan.textContent = 'I';
+      container.appendChild(iSpan);
+    } else {
+      container.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
 function appendHeroLineWordChunks(parent, text, wordSpans, isName = false) {
   const chunks = text.match(/\S+|\s+/g) || [];
   chunks.forEach(chunk => {
@@ -872,7 +890,7 @@ function appendHeroLineWordChunks(parent, text, wordSpans, isName = false) {
     span.className = isName
       ? 'hero-line-word hero-line-word--name'
       : 'hero-line-word';
-    span.textContent = chunk;
+    appendReadableCapitalIText(span, chunk);
     parent.appendChild(span);
     wordSpans.push(span);
   });
@@ -933,7 +951,7 @@ function scheduleHeroFarewell(heroFarewellEl, message = FAREWELL_MESSAGE_DEFAULT
   words.forEach(word => {
     const span = document.createElement('span');
     span.className = 'farewell-word';
-    span.textContent = word;
+    appendReadableCapitalIText(span, word);
     heroFarewellEl.appendChild(span);
     wordSpans.push(span);
   });
