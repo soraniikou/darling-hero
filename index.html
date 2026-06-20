@@ -1481,7 +1481,8 @@ function fadeHopePetals() {
 const STILLNESS_STAR_COLORS = [
   { r: 168, g: 235, b: 210 }, // ミントグリーン
   { r: 255, g: 244, b: 168 }, // シャーベットイエロー
-  { r: 255, g: 200, b: 220 }  // あわいピンク
+  { r: 255, g: 200, b: 220 }, // あわいピンク
+  { r: 190, g: 155, b: 235 }  // 紫
 ];
 let stillnessStars = [];
 
@@ -1489,13 +1490,18 @@ function spawnStillnessStars() {
   stillnessStars = [];
   const W = window.innerWidth;
   const H = window.innerHeight;
+  const cx = W / 2;
+  const cy = H / 2;
   const count = 25 + Math.floor(Math.random() * 9);
   for (let i = 0; i < count; i++) {
     const col = STILLNESS_STAR_COLORS[Math.floor(Math.random() * STILLNESS_STAR_COLORS.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (0.64 + Math.random() * 1.56) * 0.7;
     stillnessStars.push({
-      x: Math.random() * W,
-      y: H + Math.random() * 90,
-      vy: -(0.64 + Math.random() * 1.56),
+      x: cx + (Math.random() - 0.5) * 18,
+      y: cy + (Math.random() - 0.5) * 18,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
       rot: Math.random() * Math.PI * 2,
       vRot: (Math.random() - 0.5) * 0.018,
       size: 6 + Math.random() * 11,
@@ -1508,6 +1514,15 @@ function spawnStillnessStars() {
       fadeOut: false
     });
   }
+}
+
+function respawnStillnessStar(s, CW, CH) {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = (0.64 + Math.random() * 1.56) * 0.7;
+  s.x = CW / 2 + (Math.random() - 0.5) * 18;
+  s.y = CH / 2 + (Math.random() - 0.5) * 18;
+  s.vx = Math.cos(angle) * speed;
+  s.vy = Math.sin(angle) * speed;
 }
 
 function fadeStillnessStars() {
@@ -2260,13 +2275,13 @@ function drawLasers() {
         : Math.min(0.9, s.alpha + 0.02);
 
       s.swayTime++;
-      s.x += Math.sin(s.swayTime * s.swayFreq) * s.swayAmp;
-      s.y += s.vy;
+      s.x += s.vx + Math.sin(s.swayTime * s.swayFreq) * s.swayAmp * 0.35;
+      s.y += s.vy + Math.cos(s.swayTime * s.swayFreq) * s.swayAmp * 0.35;
       s.rot += s.vRot;
 
-      if (s.y < -30) {
-        s.y = CH + 10 + Math.random() * 50;
-        s.x = Math.random() * CW;
+      const margin = 36;
+      if (s.x < -margin || s.x > CW + margin || s.y < -margin || s.y > CH + margin) {
+        respawnStillnessStar(s, CW, CH);
       }
 
       if (s.alpha <= 0) return;
