@@ -813,11 +813,16 @@ const HERO_LINE_BY_PHASE = {
   sabishii: (u) => `${u}, I'm right here beside you`
 };
 
-const FAREWELL_MESSAGE = 'See you again';
+const FAREWELL_MESSAGE_DEFAULT = 'See you again';
+const FAREWELL_MESSAGE_BY_PHASE = {
+  sabishii: 'Good night',
+  ikari: 'Good night',
+  shizu: 'Good night'
+};
 const FAREWELL_WORD_STAGGER_MS = 300;
 const FAREWELL_WORD_FADE_MS = 280;
 const FAREWELL_HOLD_MS = 4000;
-/** See you again のフェイドアウト時間（従来 2000ms より +4s） */
+/** フェイドアウト時間（従来 2000ms より +4s） */
 const FAREWELL_FADE_OUT_MS = 6000;
 
 const POST_FAREWELL_SILENCE_MS = 3000;
@@ -826,8 +831,12 @@ const INPUT_UI_FADE_IN_MS = 3000;
 /** 名前付きヒーロー行のフェードアウト＋下がり（CSS transition と同期） */
 const HERO_LINE_EXIT_DURATION_MS = 6000;
 
-function getFarewellSequenceMs() {
-  const words = FAREWELL_MESSAGE.trim().split(/\s+/).filter(Boolean);
+function getFarewellMessage(phaseKey) {
+  return FAREWELL_MESSAGE_BY_PHASE[phaseKey] || FAREWELL_MESSAGE_DEFAULT;
+}
+
+function getFarewellSequenceMs(message = FAREWELL_MESSAGE_DEFAULT) {
+  const words = message.trim().split(/\s+/).filter(Boolean);
   const revealMs =
     words.length <= 1
       ? FAREWELL_WORD_FADE_MS
@@ -909,14 +918,14 @@ function clearFarewellTimers() {
   farewellTimeouts = [];
 }
 
-function scheduleHeroFarewell(heroFarewellEl) {
+function scheduleHeroFarewell(heroFarewellEl, message = FAREWELL_MESSAGE_DEFAULT) {
   clearFarewellTimers();
   heroFarewellEl.innerHTML = '';
   heroFarewellEl.style.transition = 'none';
   heroFarewellEl.style.opacity = '1';
   heroFarewellEl.style.color = 'transparent';
 
-  const words = FAREWELL_MESSAGE.trim().split(/\s+/).filter(Boolean);
+  const words = message.trim().split(/\s+/).filter(Boolean);
   const wordSpans = [];
   words.forEach(word => {
     const span = document.createElement('span');
@@ -2823,9 +2832,10 @@ async function release() {
     }
   }, heroLineShowAt + 5000);
 
-  setTimeout(() => scheduleHeroFarewell(heroFarewellEl), heroLineShowAt + 5000);
+  const farewellMessage = getFarewellMessage(phaseKey);
+  setTimeout(() => scheduleHeroFarewell(heroFarewellEl, farewellMessage), heroLineShowAt + 5000);
 
-  const farewellSequenceMs = getFarewellSequenceMs();
+  const farewellSequenceMs = getFarewellSequenceMs(farewellMessage);
   const farewellEnd = heroLineShowAt + 5000 + farewellSequenceMs;
   const totalDuration = Math.max(phase.laserDuration + 4500, farewellEnd + 400);
 
