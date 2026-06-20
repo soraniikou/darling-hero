@@ -13,7 +13,7 @@
 <!-- びっくりマーク！画像1 kibou -->
 <img src="kibou.png" width="100%" alt="kibou">
 
-
+例えば　孤独を感じておられる場合には、↓のような場面になります。
 <img src="kodoku.png" width="100%" alt="kodoku">
 
 ♪アプリ体験　♫
