@@ -1582,15 +1582,22 @@ function drawStillnessCandle(ctx, cx, baseY, candleH, candleW, alpha, flicker) {
   ctx.fillStyle = 'rgba(55, 45, 38, 0.55)';
   ctx.fillRect(cx - 0.6, baseY - candleH - 4, 1.2, 5);
 
-  // 炎
+  // 炎（少し尖った形）
   ctx.globalAlpha = alpha * 0.42;
-  const fg = ctx.createRadialGradient(cx, flameY - flameH * 0.35, 0, cx, flameY, flameH);
+  const fg = ctx.createRadialGradient(cx, flameY - flameH * 0.55, 0, cx, flameY, flameH);
   fg.addColorStop(0, 'rgba(255, 248, 210, 0.85)');
   fg.addColorStop(0.45, 'rgba(255, 205, 110, 0.45)');
   fg.addColorStop(1, 'rgba(255, 160, 60, 0)');
   ctx.fillStyle = fg;
+  const tipY = flameY - flameH * 1.05;
+  const baseFlameY = flameY - 1;
+  const halfW = candleW * 0.72;
   ctx.beginPath();
-  ctx.ellipse(cx, flameY - flameH * 0.42, candleW * 0.75, flameH, 0, 0, Math.PI * 2);
+  ctx.moveTo(cx, tipY);
+  ctx.bezierCurveTo(cx + halfW * 0.55, flameY - flameH * 0.72, cx + halfW, baseFlameY - flameH * 0.12, cx + halfW * 0.42, baseFlameY);
+  ctx.quadraticCurveTo(cx, baseFlameY + 2, cx - halfW * 0.42, baseFlameY);
+  ctx.bezierCurveTo(cx - halfW, baseFlameY - flameH * 0.12, cx - halfW * 0.55, flameY - flameH * 0.72, cx, tipY);
+  ctx.closePath();
   ctx.fill();
 
   ctx.restore();
