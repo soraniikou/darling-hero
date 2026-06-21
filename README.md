@@ -15,6 +15,7 @@
 
 例えば　孤独を感じておられる場合には、↓のような場面になります。
 <img src="kodoku.png" width="100%" alt="kodoku">
+<img src="スクリーンショット%202026-06-21%20193249.png" width="100%" alt="screenshot-0621">
 
 ♪アプリ体験　♫
 https://darling-hero.vercel.app
