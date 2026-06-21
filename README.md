@@ -1,8 +1,6 @@
 <!-- びっくりマーク！画像1 dargring -->
 <img src="dargring.png" width="100%" alt="dargring">
 
-<!-- びっくりマーク！画像2 release -->
-<img src="release.png" width="100%" alt="release">
 <!-- びっくりマーク！画像3 sad2 -->
 <img src="sad2.png" width="100%" alt="sad2">
 ↑　感情を書き出すテキスト記入欄に　淋しい　と書かれた場合、小鳥さんが、あなたの寂しさなど分かち合ってくださいます
