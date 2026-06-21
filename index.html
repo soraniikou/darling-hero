@@ -818,7 +818,7 @@ const HERO_LINE_BY_PHASE = {
   tsukare: (u) => `${u}, you don't have to be perfect`,
   nozomi: (u) => `${u}, you don't have to give up`,
   ai_love: (u) => `${u}, I love you just as you are`,
-  shizu: (u) => `${u}, whoever you become, I'll still love that you`,
+  shizu: () => 'Take your time.\nJust go at your own pace.',
   sabishii: (u) => `${u}, I'm right here beside you`
 };
 
@@ -904,12 +904,10 @@ function startHeroLineWordReveal(el, fullText) {
   el.innerHTML = '';
   el.style.transition = '';
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
-  const commaIdx = fullText.indexOf(', ');
   const wordSpans = [];
-  const namePart = commaIdx !== -1 ? fullText.slice(0, commaIdx + 1) : '';
-  const restPart = commaIdx !== -1 ? fullText.slice(commaIdx + 2) : fullText;
+  const newlineIdx = fullText.indexOf('\n');
 
-  if (isMobile && commaIdx !== -1 && !el.classList.contains('hero-line--loneliness-navy')) {
+  if (newlineIdx !== -1) {
     el.classList.add('hero-line--stacked');
     const row1 = document.createElement('span');
     row1.className = 'hero-line-row';
@@ -917,12 +915,28 @@ function startHeroLineWordReveal(el, fullText) {
     row2.className = 'hero-line-row';
     el.appendChild(row1);
     el.appendChild(row2);
-    appendHeroLineWordChunks(row1, namePart, wordSpans, true);
-    appendHeroLineWordChunks(row2, restPart, wordSpans, false);
+    appendHeroLineWordChunks(row1, fullText.slice(0, newlineIdx), wordSpans, false);
+    appendHeroLineWordChunks(row2, fullText.slice(newlineIdx + 1), wordSpans, false);
   } else {
-    el.classList.remove('hero-line--stacked');
-    appendHeroLineWordChunks(el, namePart, wordSpans, true);
-    appendHeroLineWordChunks(el, restPart, wordSpans, false);
+    const commaIdx = fullText.indexOf(', ');
+    const namePart = commaIdx !== -1 ? fullText.slice(0, commaIdx + 1) : '';
+    const restPart = commaIdx !== -1 ? fullText.slice(commaIdx + 2) : fullText;
+
+    if (isMobile && commaIdx !== -1 && !el.classList.contains('hero-line--loneliness-navy')) {
+      el.classList.add('hero-line--stacked');
+      const row1 = document.createElement('span');
+      row1.className = 'hero-line-row';
+      const row2 = document.createElement('span');
+      row2.className = 'hero-line-row';
+      el.appendChild(row1);
+      el.appendChild(row2);
+      appendHeroLineWordChunks(row1, namePart, wordSpans, true);
+      appendHeroLineWordChunks(row2, restPart, wordSpans, false);
+    } else {
+      el.classList.remove('hero-line--stacked');
+      appendHeroLineWordChunks(el, namePart, wordSpans, true);
+      appendHeroLineWordChunks(el, restPart, wordSpans, false);
+    }
   }
 
   el.classList.add('show');
