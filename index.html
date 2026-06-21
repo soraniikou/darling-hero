@@ -547,6 +547,8 @@
     }
     .hero-line--loneliness-navy.hero-line--large {
       font-size: clamp(1.849rem, 4.623vw, 2.906rem);
+      white-space: nowrap;
+      flex-wrap: nowrap;
     }
     .hero-line--loneliness-navy .hero-line-word--name {
       font-size: 0.64em;
@@ -907,7 +909,7 @@ function startHeroLineWordReveal(el, fullText) {
   const namePart = commaIdx !== -1 ? fullText.slice(0, commaIdx + 1) : '';
   const restPart = commaIdx !== -1 ? fullText.slice(commaIdx + 2) : fullText;
 
-  if (isMobile && commaIdx !== -1) {
+  if (isMobile && commaIdx !== -1 && !el.classList.contains('hero-line--loneliness-navy')) {
     el.classList.add('hero-line--stacked');
     const row1 = document.createElement('span');
     row1.className = 'hero-line-row';
