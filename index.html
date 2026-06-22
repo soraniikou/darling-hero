@@ -1339,13 +1339,16 @@ function loop() {
 
   updateGratitudeScene();
   drawGratitudeSky();
+  updateHopeRainbowScene();
+  drawHopeRainbow();
 
   const lonelinessTriMul =
     lonelinessScene.active && lonelinessScene.alpha > 0
       ? Math.max(0, 1 - lonelinessScene.alpha * 1.4)
       : 1;
   const joyTriMul = joyLaceCurtains.length > 0 ? 0 : 1;
-  const triMul = (1 - mb) * skyMul * lonelinessTriMul * joyTriMul;
+  const hopeTriMul = hopeAngelWings.length > 0 ? 0 : 1;
+  const triMul = (1 - mb) * skyMul * lonelinessTriMul * joyTriMul * hopeTriMul;
   triMarks.forEach(tr => {
     tr.x += tr.vx; tr.y += tr.vy; tr.rot += tr.vr;
     if (tr.x < -300) tr.x = W + 200;
@@ -1372,6 +1375,7 @@ function loop() {
   });
 
   updateJoyAngelWings();
+  updateHopeAngelWings();
 
   let bubbleBlend = mb;
   if (gratitudeScene.active && gratitudeScene.bubbleAlpha > 0.001) {
@@ -1493,49 +1497,130 @@ function fadeSorrowBirds() {
 }
 
 // ============================================================
-// Hope 花びらシステム（nozomi フェーズ専用・他の感情に影響しない）
+// Hope 羽（nozomi フェーズ専用・他の感情に影響しない）
 // ============================================================
-const PETAL_COLORS = [
-  { r: 255, g: 255, b: 255 }, // 白
-  { r: 220, g: 50,  b: 80  }, // 赤
-  { r: 255, g: 160, b: 190 }, // ピンク
-  { r: 140, g: 210, b: 255 }  // 水色
-];
-let hopePetals = [];
+let hopeAngelWings = [];
 
-function spawnHopePetals() {
-  hopePetals = [];
+function startHopeAngelWings() {
+  hopeAngelWings = [];
   const W = window.innerWidth;
   const H = window.innerHeight;
-  for (let i = 0; i < 24; i++) {
-    const col = PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)];
-    hopePetals.push({
-      x:          Math.random() * W,
-      y:          Math.random() * H * 1.2,
-      vx:         0,
-      vy:         -(0.35 + Math.random() * 0.55),
-      rot:        Math.random() * Math.PI * 2,
-      vRot:       (Math.random() - 0.5) * 0.05,
-      swayTime:   Math.random() * 200,
-      swayAmp:    0.28 + Math.random() * 0.38,
-      swayFreq:   0.010 + Math.random() * 0.010,
-      size:       5 + Math.random() * 6,
-      aspect:     0.30 + Math.random() * 0.25,
-      r: col.r, g: col.g, b: col.b,
-      alpha:      0,
-      startDelay: Math.floor(Math.random() * 90),
-      fadeOut:    false
+  const count = 38 + Math.floor(Math.random() * 14);
+  for (let i = 0; i < count; i++) {
+    hopeAngelWings.push({
+      x: Math.random() * W,
+      y: H * (0.42 + Math.random() * 0.62),
+      vy: -(0.22 + Math.random() * 0.62),
+      vx: (Math.random() - 0.5) * 0.14,
+      rot: (Math.random() - 0.5) * 0.8,
+      vRot: (Math.random() - 0.5) * 0.005,
+      size: 7.2 + Math.random() * 16,
+      swayTime: Math.random() * 200,
+      swayAmp: 0.25 + Math.random() * 0.55,
+      swayFreq: 0.012 + Math.random() * 0.022,
+      alpha: 0,
+      fadeOut: false,
+      mirror: Math.random() > 0.5 ? 1 : -1
     });
   }
 }
 
-function fadeHopePetals() {
-  hopePetals.forEach(p => { p.fadeOut = true; });
+function fadeHopeAngelWings() {
+  hopeAngelWings.forEach(w => { w.fadeOut = true; });
 }
 
-// ============================================================
+function updateHopeAngelWings() {
+  if (hopeAngelWings.length === 0) return;
+  hopeAngelWings.forEach(w => {
+    w.swayTime++;
+    w.alpha = w.fadeOut
+      ? Math.max(0, w.alpha - 0.011)
+      : Math.min(0.78, w.alpha + 0.014);
+    w.x += w.vx + Math.sin(w.swayTime * w.swayFreq) * w.swayAmp;
+    w.y += w.vy;
+    w.rot += w.vRot;
+    drawAngelWing(w);
+  });
+  hopeAngelWings = hopeAngelWings.filter(w => !(w.fadeOut && w.alpha <= 0) && w.y > -100);
+}
+
+// 🌌===========
+// Hope 虹（nozomi ・ラストメッセージ以降）
+// 🌌===========
+let hopeRainbowScene = { active: false, alpha: 0, scale: 0.55, liftY: 0, fadeOut: false };
+
+function startHopeRainbowScene() {
+  hopeRainbowScene.active = true;
+  hopeRainbowScene.alpha = 0;
+  hopeRainbowScene.scale = 0.55;
+  hopeRainbowScene.liftY = 0;
+  hopeRainbowScene.fadeOut = false;
+}
+
+function fadeHopeRainbowScene() {
+  hopeRainbowScene.fadeOut = true;
+}
+
+function resetHopeRainbowScene() {
+  hopeRainbowScene.active = false;
+  hopeRainbowScene.alpha = 0;
+  hopeRainbowScene.scale = 0.55;
+  hopeRainbowScene.liftY = 0;
+  hopeRainbowScene.fadeOut = false;
+}
+
+function updateHopeRainbowScene() {
+  if (!hopeRainbowScene.active) return;
+  if (hopeRainbowScene.fadeOut) {
+    hopeRainbowScene.alpha = Math.max(0, hopeRainbowScene.alpha - 0.0045);
+    if (hopeRainbowScene.alpha <= 0) hopeRainbowScene.active = false;
+    return;
+  }
+  hopeRainbowScene.alpha = Math.min(0.48, hopeRainbowScene.alpha + 0.0048);
+  hopeRainbowScene.scale = Math.min(1.05, hopeRainbowScene.scale + 0.0028);
+  hopeRainbowScene.liftY = Math.min(H * 0.42, hopeRainbowScene.liftY + 0.32);
+}
+
+function drawHopeRainbow() {
+  if (!hopeRainbowScene.active || hopeRainbowScene.alpha <= 0.005) return;
+  const a = hopeRainbowScene.alpha;
+  const cx = W * 0.5;
+  const cy = H * 1.18 - hopeRainbowScene.liftY;
+  const baseR = Math.min(W, H) * 0.78 * hopeRainbowScene.scale;
+  const bands = [
+    { h: 330, s: 48, l: 78 },
+    { h: 18, s: 52, l: 82 },
+    { h: 42, s: 50, l: 84 },
+    { h: 138, s: 44, l: 80 },
+    { h: 188, s: 46, l: 78 },
+    { h: 218, s: 48, l: 76 },
+    { h: 258, s: 46, l: 78 }
+  ];
+  ctx.save();
+  ctx.filter = 'blur(32px)';
+  bands.forEach((band, i) => {
+    const r = baseR - i * (baseR * 0.042);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI * 1.06, Math.PI * 1.94);
+    ctx.strokeStyle = `hsla(${band.h}, ${band.s}%, ${band.l}%, ${a * 0.2})`;
+    ctx.lineWidth = baseR * 0.055;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  });
+  ctx.filter = 'blur(52px)';
+  ctx.globalAlpha = a * 0.14;
+  const glow = ctx.createRadialGradient(cx, cy - baseR * 0.35, 0, cx, cy - baseR * 0.1, baseR * 0.85);
+  glow.addColorStop(0, 'rgba(180, 220, 255, 0.35)');
+  glow.addColorStop(0.45, 'rgba(255, 200, 220, 0.22)');
+  glow.addColorStop(1, 'rgba(255, 220, 180, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+// 🌌===========
 // Stillness 星システム（shizu フェーズ専用・他の感情に影響しない）
-// ============================================================
+// 🌌===========
 const STILLNESS_STAR_COLORS = [
   { r: 168, g: 235, b: 210 }, // ミントグリーン
   { r: 255, g: 244, b: 168 }, // シャーベットイエロー
@@ -2478,52 +2563,6 @@ function drawLasers() {
     sorrowBirds = sorrowBirds.filter(b => !(b.fadeOut && b.alpha <= 0));
   }
 
-  // ── Hope 花びら（nozomi 以外では hopePetals が空なので何もしない）──
-  if (hopePetals.length > 0) {
-    const CW = laserCanvas.width;
-    const CH = laserCanvas.height;
-    hopePetals.forEach(p => {
-      if (p.startDelay > 0) { p.startDelay--; return; }
-
-      p.alpha = p.fadeOut
-        ? Math.max(0, p.alpha - 0.007)
-        : Math.min(0.88, p.alpha + 0.022);
-
-      p.swayTime++;
-      p.vx = Math.sin(p.swayTime * p.swayFreq) * p.swayAmp;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rot += p.vRot;
-
-      // 画面外に出たらループ
-      if (p.x < -20)      p.x = CW + 20;
-      if (p.x > CW + 20)  p.x = -20;
-      if (p.y < -20)      p.y = CH + 20;
-
-      if (p.alpha <= 0) return;
-
-      laserCtx.save();
-      laserCtx.translate(p.x, p.y);
-      laserCtx.rotate(p.rot);
-      laserCtx.globalAlpha = p.alpha;
-      laserCtx.shadowColor = `rgba(${p.r}, ${p.g}, ${p.b}, 0.65)`;
-      laserCtx.shadowBlur  = 9;
-      laserCtx.fillStyle   = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha})`;
-
-      // 薔薇の花弁形：上部が尖り、中央が膨らみ、基部に小さな切れ込み
-      const s = p.size;
-      laserCtx.beginPath();
-      laserCtx.moveTo(0, -s);                                                        // 先端（上）
-      laserCtx.bezierCurveTo( s * 1.1, -s * 0.3,  s * 0.9,  s * 0.65,  s * 0.15,  s * 0.95); // 右辺
-      laserCtx.quadraticCurveTo(0, s * 0.72, -s * 0.15, s * 0.95);                  // 基部の切れ込み
-      laserCtx.bezierCurveTo(-s * 0.9,  s * 0.65, -s * 1.1, -s * 0.3,  0, -s);     // 左辺
-      laserCtx.closePath();
-      laserCtx.fill();
-      laserCtx.restore();
-    });
-    hopePetals = hopePetals.filter(p => !(p.fadeOut && p.alpha <= 0));
-  }
-
   // ── Stillness の星（shizu 以外では stillnessStars が空なので何もしない）──
   if (stillnessStars.length > 0) {
     const CW = laserCanvas.width;
@@ -2825,7 +2864,7 @@ async function release() {
   // 文字飛散
   setTimeout(() => {
     spawnHeroBurst(text, phase);
-    if (phase.petalBurst) spawnHopePetals();
+    if (phase.petalBurst) startHopeAngelWings();
     if (phase.laceCurtain) startJoyLaceCurtains();
     if (phase.starRise) spawnStillnessStars();
     if (!phase.swayFall && !phase.petalBurst && !phase.skyScene && !phase.laceCurtain && !phase.starRise) spawnHeroSparkles(window.innerWidth / 2, window.innerHeight / 2, 80, phase);
@@ -2871,6 +2910,10 @@ async function release() {
       fadeStillnessStars();
       startStillnessCandleScene();
     }
+    if (phase.petalBurst) {
+      fadeHopeAngelWings();
+      startHopeRainbowScene();
+    }
   }, heroLineShowAt + 5000);
 
   const farewellMessage = getFarewellMessage(phaseKey);
@@ -2883,7 +2926,7 @@ async function release() {
   // フェードアウト
   setTimeout(() => {
     fadeSorrowBirds();
-    fadeHopePetals();
+    fadeHopeRainbowScene();
     fadeStillnessStars();
     fadeStillnessCandleScene();
     fadeJoyLaceCurtains();
@@ -2945,7 +2988,8 @@ async function release() {
     cachedJudgment = null;
     cachedText = '';
     sorrowBirds = [];
-    hopePetals = [];
+    hopeAngelWings = [];
+    resetHopeRainbowScene();
     stillnessStars = [];
     resetStillnessCandleScene();
     joyLaceCurtains = [];
