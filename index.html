@@ -2902,6 +2902,10 @@ async function release() {
   }, heroLineShowAt);
 
   setTimeout(() => {
+    if (phase.petalBurst) startHopeRainbowScene();
+  }, heroLineShowAt + 2000);
+
+  setTimeout(() => {
     heroFarewellEl.classList.toggle('hero-farewell--joy', isJoy);
     heroFarewellEl.classList.toggle('hero-farewell--navy',  isNavyPhase);
     heroFarewellEl.classList.toggle('hero-farewell--green', isGreenPhase);
@@ -2914,7 +2918,6 @@ async function release() {
     }
     if (phase.petalBurst) {
       fadeHopeAngelWings();
-      startHopeRainbowScene();
     }
   }, heroLineShowAt + 5000);
 
