@@ -11,6 +11,7 @@
 <!-- びっくりマーク！画像1 kibou -->
 <img src="kibou.png" width="100%" alt="kibou">
 
+<img src="darling2.png" width="100%" alt="darling2">
 例えば　孤独を感じておられる場合には、↓のような場面になります。
 <img src="kodoku.png" width="100%" alt="kodoku">
 <img src="スクリーンショット%202026-06-21%20193249.png" width="100%" alt="screenshot-0621">
